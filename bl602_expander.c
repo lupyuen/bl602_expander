@@ -68,7 +68,7 @@ struct bl602_expander_dev_s
 
   /* Saved callback information for each I/O expander client */
 
-  struct bl602_expander_callback_s cb[CONFIG_BL602_EXPANDER_INT_NCALLBACKS];
+  struct bl602_expander_callback_s cb[CONFIG_IOEXPANDER_NPINS];
 #endif
 };
 
@@ -608,7 +608,7 @@ static int bl602_expander_attach(FAR struct ioexpander_dev_s *dev, ioe_pinset_t 
   /* Find and available in entry in the callback table */
 
   ret = -ENOSPC;
-  for (i = 0; i < CONFIG_BL602_EXPANDER_INT_NCALLBACKS; i++)
+  for (i = 0; i < CONFIG_IOEXPANDER_NPINS; i++)
     {
       /* Is this entry available (i.e., no callback attached) */
 
@@ -654,7 +654,7 @@ static int bl602_expander_detach(FAR struct ioexpander_dev_s *dev, FAR void *han
   DEBUGASSERT(priv != NULL && cb != NULL);
   DEBUGASSERT((uintptr_t)cb >= (uintptr_t)&priv->cb[0] &&
               (uintptr_t)cb <=
-              (uintptr_t)&priv->cb[CONFIG_BL602_EXPANDER_INT_NCALLBACKS - 1]);
+              (uintptr_t)&priv->cb[CONFIG_IOEXPANDER_NPINS - 1]);
   UNUSED(priv);
 
   cb->pinset = 0;
@@ -686,7 +686,7 @@ static void bl602_expander_irqworker(void *arg)
 
   /* Perform pin interrupt callbacks */
 
-  for (i = 0; i < CONFIG_BL602_EXPANDER_INT_NCALLBACKS; i++)
+  for (i = 0; i < CONFIG_IOEXPANDER_NPINS; i++)
     {
       /* Is this entry valid (i.e., callback attached)?  If so, did andy of
        * the requested pin interrupts occur?

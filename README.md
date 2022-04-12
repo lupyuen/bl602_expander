@@ -120,6 +120,6 @@ int bl602_bringup(void) {
                   (FAR void *)IOEXPANDER_VAL_NORMAL);
   IOEXP_SETOPTION(ioe, 6, IOEXPANDER_OPTION_INTCFG,
                   (FAR void *)IOEXPANDER_VAL_HIGH);
-  gpio_lower_half(ioe, 6, GPIO_INTERRUPT_PIN, 3);
-#endif  /* CONFIG_IOEXPANDER_BL602_EXPANDER */
+  gpio_lower_half(ioe, 6, GPIO_INTERRUPT_PIN, 6);
+#endif /* CONFIG_IOEXPANDER_BL602_EXPANDER */
 ```
