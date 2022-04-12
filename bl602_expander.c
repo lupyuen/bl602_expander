@@ -33,8 +33,6 @@
 #include <nuttx/ioexpander/ioexpander.h>
 #include <nuttx/ioexpander/bl602_expander.h>
 
-#include "bl602_expander.h"
-
 #if defined(CONFIG_IOEXPANDER_BL602_EXPANDER)
 
 /****************************************************************************

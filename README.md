@@ -65,4 +65,61 @@ nuttx/boards/risc-v/bl602/bl602evb/src/bl602_bringup.c
 nuttx/boards/xtensa/esp32/esp32-devkitc/src/esp32_bringup.c
 ```
 
-TODO: And call `bl602_expander_register` to register our driver:
+And call `bl602_expander_initialize` to initialise our driver:
+
+```c
+#ifdef CONFIG_IOEXPANDER_BL602_EXPANDER
+#include <nuttx/ioexpander/bl602_expander.h>
+#endif /* CONFIG_IOEXPANDER_BL602_EXPANDER */
+...
+int bl602_bringup(void) {
+  ...
+#ifdef CONFIG_IOEXPANDER_BL602_EXPANDER
+  /* Get an instance of the BL602 GPIO Expander */
+
+  FAR struct ioexpander_dev_s *ioe = bl602_expander_initialize();
+  if (ioe == NULL)
+    {
+      gpioerr("ERROR: bl602_expander_initialize failed\n");
+      return -ENOMEM;
+    }
+
+  /* Register four pin drivers */
+
+  /* Pin 3: an non-inverted, input pin */
+
+  IOEXP_SETDIRECTION(ioe, 3, IOEXPANDER_DIRECTION_IN);
+  IOEXP_SETOPTION(ioe, 3, IOEXPANDER_OPTION_INVERT,
+                  (FAR void *)IOEXPANDER_VAL_NORMAL);
+  IOEXP_SETOPTION(ioe, 3, IOEXPANDER_OPTION_INTCFG,
+                  (FAR void *)IOEXPANDER_VAL_DISABLE);
+  gpio_lower_half(ioe, 3, GPIO_INPUT_PIN, 3);
+
+  /* Pin 4: an non-inverted, output pin */
+
+  IOEXP_SETDIRECTION(ioe, 4, IOEXPANDER_DIRECTION_OUT);
+  IOEXP_SETOPTION(ioe, 4, IOEXPANDER_OPTION_INVERT,
+                  (FAR void *)IOEXPANDER_VAL_NORMAL);
+  IOEXP_SETOPTION(ioe, 4, IOEXPANDER_OPTION_INTCFG,
+                  (FAR void *)IOEXPANDER_VAL_DISABLE);
+  gpio_lower_half(ioe, 4, GPIO_OUTPUT_PIN, 4);
+
+  /* Pin 5: an non-inverted, edge interrupting pin */
+
+  IOEXP_SETDIRECTION(ioe, 5, IOEXPANDER_DIRECTION_IN);
+  IOEXP_SETOPTION(ioe, 5, IOEXPANDER_OPTION_INVERT,
+                  (FAR void *)IOEXPANDER_VAL_NORMAL);
+  IOEXP_SETOPTION(ioe, 5, IOEXPANDER_OPTION_INTCFG,
+                  (FAR void *)IOEXPANDER_VAL_BOTH);
+  gpio_lower_half(ioe, 5, GPIO_INTERRUPT_PIN, 5);
+
+  /* Pin 6: a non-inverted, level interrupting pin */
+
+  IOEXP_SETDIRECTION(ioe, 6, IOEXPANDER_DIRECTION_IN);
+  IOEXP_SETOPTION(ioe, 6, IOEXPANDER_OPTION_INVERT,
+                  (FAR void *)IOEXPANDER_VAL_NORMAL);
+  IOEXP_SETOPTION(ioe, 6, IOEXPANDER_OPTION_INTCFG,
+                  (FAR void *)IOEXPANDER_VAL_HIGH);
+  gpio_lower_half(ioe, 6, GPIO_INTERRUPT_PIN, 3);
+#endif  /* CONFIG_IOEXPANDER_BL602_EXPANDER */
+```
