@@ -67,6 +67,8 @@ nuttx/boards/xtensa/esp32/esp32-devkitc/src/esp32_bringup.c
 
 And call `bl602_expander_initialize` to initialise our driver:
 
+https://github.com/lupyuen/incubator-nuttx/blob/expander/boards/risc-v/bl602/bl602evb/src/bl602_bringup.c#L827-L874
+
 ```c
 #ifdef CONFIG_IOEXPANDER_BL602_EXPANDER
 #include <nuttx/ioexpander/bl602_expander.h>

@@ -33,6 +33,8 @@
 #include <nuttx/ioexpander/ioexpander.h>
 #include <nuttx/ioexpander/bl602_expander.h>
 
+#undef CONFIG_IOEXPANDER_INT_ENABLE ////
+
 #if defined(CONFIG_IOEXPANDER_BL602_EXPANDER)
 
 /****************************************************************************
@@ -231,7 +233,7 @@ static int bl602_expander_option(FAR struct ioexpander_dev_s *dev, uint8_t pin,
   FAR struct bl602_expander_dev_s *priv = (FAR struct bl602_expander_dev_s *)dev;
   int ret = -ENOSYS;
 
-  gpioinfo("addr=%02x pin=%u option=%u\n",  priv->addr, pin, opt);
+  ////gpioinfo("addr=%02x pin=%u option=%u\n",  priv->addr, pin, opt);
 
   DEBUGASSERT(priv != NULL);
 
@@ -323,7 +325,7 @@ static int bl602_expander_readpin(FAR struct ioexpander_dev_s *dev, uint8_t pin,
   FAR struct bl602_expander_dev_s *priv = (FAR struct bl602_expander_dev_s *)dev;
   int ret;
 
-  gpioinfo("pin=%u\n", priv->addr);
+  ////gpioinfo("pin=%u\n", priv->addr);
 
   DEBUGASSERT(priv != NULL && pin < CONFIG_IOEXPANDER_NPINS &&
               value != NULL);
