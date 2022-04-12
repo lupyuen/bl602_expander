@@ -10,7 +10,7 @@ git submodule add https://github.com/lupyuen/bl602_expander
 ln -s bl602_expander/bl602_expander.c .
 popd
 
-pushd nuttx/include/nuttx/ioexpander
+pushd nuttx/nuttx/include/nuttx/ioexpander
 ln -s ../../../drivers/ioexpander/bl602_expander/bl602_expander.h .
 popd
 ```
