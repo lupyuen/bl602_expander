@@ -1,5 +1,5 @@
 /****************************************************************************
- * include/nuttx/ioexpander/ioe_dummy.h
+ * include/nuttx/ioexpander/bl602_expander.h
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -18,8 +18,8 @@
  *
  ****************************************************************************/
 
-#ifndef __INCLUDE_NUTTX_IOEXPANDER_IOE_DUMMY_H
-#define __INCLUDE_NUTTX_IOEXPANDER_IOE_DUMMY_H
+#ifndef __INCLUDE_NUTTX_IOEXPANDER_BL602_EXPANDER_H
+#define __INCLUDE_NUTTX_IOEXPANDER_BL602_EXPANDER_H
 
 /****************************************************************************
  * Included Files
@@ -31,8 +31,8 @@
  * Public Function Prototypes
  ****************************************************************************/
 
-#ifdef CONFIG_IOEXPANDER_DUMMY
-FAR struct ioexpander_dev_s *ioe_dummy_initialize(void);
+#ifdef CONFIG_IOEXPANDER_BL602_EXPANDER
+FAR struct ioexpander_dev_s *bl602_expander_initialize(void);
 #endif
 
-#endif /* __INCLUDE_NUTTX_IOEXPANDER_IOE_DUMMY_H */
+#endif /* __INCLUDE_NUTTX_IOEXPANDER_BL602_EXPANDER_H */

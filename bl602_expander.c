@@ -1,5 +1,5 @@
 /****************************************************************************
- * drivers/ioexpander/skeleton.c
+ * drivers/ioexpander/bl602_expander.c
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -31,11 +31,11 @@
 #include <nuttx/kmalloc.h>
 #include <nuttx/semaphore.h>
 #include <nuttx/ioexpander/ioexpander.h>
-#include <nuttx/ioexpander/skeleton.h>
+#include <nuttx/ioexpander/bl602_expander.h>
 
-#include "skeleton.h"
+#include "bl602_expander.h"
 
-#if defined(CONFIG_IOEXPANDER_skeleton)
+#if defined(CONFIG_IOEXPANDER_BL602_EXPANDER)
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -48,7 +48,7 @@
 #ifdef CONFIG_IOEXPANDER_INT_ENABLE
 /* This type represents on registered pin interrupt callback */
 
-struct skel_callback_s
+struct bl602_expander_callback_s
 {
   ioe_pinset_t pinset;          /* Set of pin interrupts that will generate the callback */
   ioe_callback_t cbfunc;        /* The saved callback function pointer */
@@ -57,11 +57,11 @@ struct skel_callback_s
 
 /* This structure represents the state of the I/O Expander driver */
 
-struct skel_dev_s
+struct bl602_expander_dev_s
 {
   struct ioexpander_dev_s dev;  /* Nested structure to allow casting as public gpio expander */
-#ifdef CONFIG_skeleton_MULTIPLE
-  FAR struct skel_dev_s *flink; /* Supports a singly linked list of drivers */
+#ifdef CONFIG_BL602_EXPANDER_MULTIPLE
+  FAR struct bl602_expander_dev_s *flink; /* Supports a singly linked list of drivers */
 #endif
   sem_t exclsem;                /* Mutual exclusion */
 
@@ -70,7 +70,7 @@ struct skel_dev_s
 
   /* Saved callback information for each I/O expander client */
 
-  struct skel_callback_s cb[CONFIG_SKELETON_INT_NCALLBACKS];
+  struct bl602_expander_callback_s cb[CONFIG_BL602_EXPANDER_INT_NCALLBACKS];
 #endif
 };
 
@@ -78,66 +78,66 @@ struct skel_dev_s
  * Private Function Prototypes
  ****************************************************************************/
 
-static int skel_lock(FAR struct skel_dev_s *priv);
+static int bl602_expander_lock(FAR struct bl602_expander_dev_s *priv);
 
-static int skel_direction(FAR struct ioexpander_dev_s *dev, uint8_t pin,
+static int bl602_expander_direction(FAR struct ioexpander_dev_s *dev, uint8_t pin,
                           int dir);
-static int skel_option(FAR struct ioexpander_dev_s *dev, uint8_t pin,
+static int bl602_expander_option(FAR struct ioexpander_dev_s *dev, uint8_t pin,
                        int opt, void *val);
-static int skel_writepin(FAR struct ioexpander_dev_s *dev, uint8_t pin,
+static int bl602_expander_writepin(FAR struct ioexpander_dev_s *dev, uint8_t pin,
                          bool value);
-static int skel_readpin(FAR struct ioexpander_dev_s *dev, uint8_t pin,
+static int bl602_expander_readpin(FAR struct ioexpander_dev_s *dev, uint8_t pin,
                         FAR bool *value);
-static int skel_readbuf(FAR struct ioexpander_dev_s *dev, uint8_t pin,
+static int bl602_expander_readbuf(FAR struct ioexpander_dev_s *dev, uint8_t pin,
                         FAR bool *value);
 #ifdef CONFIG_IOEXPANDER_MULTIPIN
-static int skel_multiwritepin(FAR struct ioexpander_dev_s *dev,
+static int bl602_expander_multiwritepin(FAR struct ioexpander_dev_s *dev,
                               FAR uint8_t *pins, FAR bool *values,
                               int count);
-static int skel_multireadpin(FAR struct ioexpander_dev_s *dev,
+static int bl602_expander_multireadpin(FAR struct ioexpander_dev_s *dev,
                              FAR uint8_t *pins, FAR bool *values, int count);
-static int skel_multireadbuf(FAR struct ioexpander_dev_s *dev,
+static int bl602_expander_multireadbuf(FAR struct ioexpander_dev_s *dev,
                              FAR uint8_t *pins, FAR bool *values, int count);
 #endif
 #ifdef CONFIG_IOEXPANDER_INT_ENABLE
-static int skel_attach(FAR struct ioexpander_dev_s *dev,
+static int bl602_expander_attach(FAR struct ioexpander_dev_s *dev,
                        ioe_pinset_t pinset, ioe_callback_t callback);
-static int skel_detach(FAR struct ioexpander_dev_s *dev,
+static int bl602_expander_detach(FAR struct ioexpander_dev_s *dev,
                        FAR void *handle);
 
-static void skel_irqworker(void *arg);
-static void skel_interrupt(FAR void *arg);
+static void bl602_expander_irqworker(void *arg);
+static void bl602_expander_interrupt(FAR void *arg);
 #endif
 
 /****************************************************************************
  * Private Data
  ****************************************************************************/
 
-#ifndef CONFIG_skeleton_MULTIPLE
+#ifndef CONFIG_BL602_EXPANDER_MULTIPLE
 /* If only a single device is supported, then the driver state structure may
  * as well be pre-allocated.
  */
 
-static struct skel_dev_s g_skel;
+static struct bl602_expander_dev_s g_skel;
 #endif
 
 /* I/O expander vtable */
 
-static const struct ioexpander_ops_s g_skel_ops =
+static const struct ioexpander_ops_s g_bl602_expander_ops =
 {
-  skel_direction,
-  skel_option,
-  skel_writepin,
-  skel_readpin,
-  skel_readbuf
+  bl602_expander_direction,
+  bl602_expander_option,
+  bl602_expander_writepin,
+  bl602_expander_readpin,
+  bl602_expander_readbuf
 #ifdef CONFIG_IOEXPANDER_MULTIPIN
-  , skel_multiwritepin
-  , skel_multireadpin
-  , skel_multireadbuf
+  , bl602_expander_multiwritepin
+  , bl602_expander_multireadpin
+  , bl602_expander_multireadbuf
 #endif
 #ifdef CONFIG_IOEXPANDER_INT_ENABLE
-  , skel_attach
-  , skel_detach
+  , bl602_expander_attach
+  , bl602_expander_detach
 #endif
 };
 
@@ -146,22 +146,22 @@ static const struct ioexpander_ops_s g_skel_ops =
  ****************************************************************************/
 
 /****************************************************************************
- * Name: skel_lock
+ * Name: bl602_expander_lock
  *
  * Description:
  *   Get exclusive access to the I/O Expander
  *
  ****************************************************************************/
 
-static int skel_lock(FAR struct skel_dev_s *priv)
+static int bl602_expander_lock(FAR struct bl602_expander_dev_s *priv)
 {
   return nxsem_wait_uninterruptible(&priv->exclsem);
 }
 
-#define skel_unlock(p) nxsem_post(&(p)->exclsem)
+#define bl602_expander_unlock(p) nxsem_post(&(p)->exclsem)
 
 /****************************************************************************
- * Name: skel_direction
+ * Name: bl602_expander_direction
  *
  * Description:
  *   Set the direction of an ioexpander pin. Required.
@@ -176,10 +176,10 @@ static int skel_lock(FAR struct skel_dev_s *priv)
  *
  ****************************************************************************/
 
-static int skel_direction(FAR struct ioexpander_dev_s *dev, uint8_t pin,
+static int bl602_expander_direction(FAR struct ioexpander_dev_s *dev, uint8_t pin,
                           int direction)
 {
-  FAR struct skel_dev_s *priv = (FAR struct skel_dev_s *)dev;
+  FAR struct bl602_expander_dev_s *priv = (FAR struct bl602_expander_dev_s *)dev;
   int ret;
 
   if (direction != IOEXPANDER_DIRECTION_IN &&
@@ -195,7 +195,7 @@ static int skel_direction(FAR struct ioexpander_dev_s *dev, uint8_t pin,
 
   /* Get exclusive access to the I/O Expander */
 
-  ret = skel_lock(priv);
+  ret = bl602_expander_lock(priv);
   if (ret < 0)
     {
       return ret;
@@ -204,12 +204,12 @@ static int skel_direction(FAR struct ioexpander_dev_s *dev, uint8_t pin,
   /* Set the pin direction in the I/O Expander */
 #warning Missing logic
 
-  skel_unlock(priv);
+  bl602_expander_unlock(priv);
   return ret;
 }
 
 /****************************************************************************
- * Name: skel_option
+ * Name: bl602_expander_option
  *
  * Description:
  *   Set pin options. Required.
@@ -227,10 +227,10 @@ static int skel_direction(FAR struct ioexpander_dev_s *dev, uint8_t pin,
  *
  ****************************************************************************/
 
-static int skel_option(FAR struct ioexpander_dev_s *dev, uint8_t pin,
+static int bl602_expander_option(FAR struct ioexpander_dev_s *dev, uint8_t pin,
                        int opt, FAR void *value)
 {
-  FAR struct skel_dev_s *priv = (FAR struct skel_dev_s *)dev;
+  FAR struct bl602_expander_dev_s *priv = (FAR struct bl602_expander_dev_s *)dev;
   int ret = -ENOSYS;
 
   gpioinfo("addr=%02x pin=%u option=%u\n",  priv->addr, pin, opt);
@@ -243,7 +243,7 @@ static int skel_option(FAR struct ioexpander_dev_s *dev, uint8_t pin,
     {
       /* Get exclusive access to the I/O Expander */
 
-      ret = skel_lock(priv);
+      ret = bl602_expander_lock(priv);
       if (ret < 0)
         {
           return ret;
@@ -252,14 +252,14 @@ static int skel_option(FAR struct ioexpander_dev_s *dev, uint8_t pin,
       /* Set the pin option */
 #warning Missing logic
 
-      skel_unlock(priv);
+      bl602_expander_unlock(priv);
     }
 
   return ret;
 }
 
 /****************************************************************************
- * Name: skel_writepin
+ * Name: bl602_expander_writepin
  *
  * Description:
  *   Set the pin level. Required.
@@ -275,10 +275,10 @@ static int skel_option(FAR struct ioexpander_dev_s *dev, uint8_t pin,
  *
  ****************************************************************************/
 
-static int skel_writepin(FAR struct ioexpander_dev_s *dev, uint8_t pin,
+static int bl602_expander_writepin(FAR struct ioexpander_dev_s *dev, uint8_t pin,
                          bool value)
 {
-  FAR struct skel_dev_s *priv = (FAR struct skel_dev_s *)dev;
+  FAR struct bl602_expander_dev_s *priv = (FAR struct bl602_expander_dev_s *)dev;
   int ret;
 
   gpioinfo("pin=%u value=%u\n", pin, value);
@@ -287,7 +287,7 @@ static int skel_writepin(FAR struct ioexpander_dev_s *dev, uint8_t pin,
 
   /* Get exclusive access to the I/O Expander */
 
-  ret = skel_lock(priv);
+  ret = bl602_expander_lock(priv);
   if (ret < 0)
     {
       return ret;
@@ -296,12 +296,12 @@ static int skel_writepin(FAR struct ioexpander_dev_s *dev, uint8_t pin,
   /* Write the pin value */
 #warning Missing logic
 
-  skel_unlock(priv);
+  bl602_expander_unlock(priv);
   return ret;
 }
 
 /****************************************************************************
- * Name: skel_readpin
+ * Name: bl602_expander_readpin
  *
  * Description:
  *   Read the actual PIN level. This can be different from the last value
@@ -319,10 +319,10 @@ static int skel_writepin(FAR struct ioexpander_dev_s *dev, uint8_t pin,
  *
  ****************************************************************************/
 
-static int skel_readpin(FAR struct ioexpander_dev_s *dev, uint8_t pin,
+static int bl602_expander_readpin(FAR struct ioexpander_dev_s *dev, uint8_t pin,
                         FAR bool *value)
 {
-  FAR struct skel_dev_s *priv = (FAR struct skel_dev_s *)dev;
+  FAR struct bl602_expander_dev_s *priv = (FAR struct bl602_expander_dev_s *)dev;
   int ret;
 
   gpioinfo("pin=%u\n", priv->addr);
@@ -332,7 +332,7 @@ static int skel_readpin(FAR struct ioexpander_dev_s *dev, uint8_t pin,
 
   /* Get exclusive access to the I/O Expander */
 
-  ret = skel_lock(priv);
+  ret = bl602_expander_lock(priv);
   if (ret < 0)
     {
       return ret;
@@ -344,12 +344,12 @@ static int skel_readpin(FAR struct ioexpander_dev_s *dev, uint8_t pin,
   /* Return the pin value via the value pointer */
 #warning Missing logic
 
-  skel_unlock(priv);
+  bl602_expander_unlock(priv);
   return ret;
 }
 
 /****************************************************************************
- * Name: skel_readbuf
+ * Name: bl602_expander_readbuf
  *
  * Description:
  *   Read the buffered pin level.
@@ -365,15 +365,15 @@ static int skel_readpin(FAR struct ioexpander_dev_s *dev, uint8_t pin,
  *
  ****************************************************************************/
 
-static int skel_readbuf(FAR struct ioexpander_dev_s *dev, uint8_t pin,
+static int bl602_expander_readbuf(FAR struct ioexpander_dev_s *dev, uint8_t pin,
                         FAR bool *value)
 {
-  FAR struct skel_dev_s *priv = (FAR struct skel_dev_s *)dev;
+  FAR struct bl602_expander_dev_s *priv = (FAR struct bl602_expander_dev_s *)dev;
   int ret;
 
   /* Get exclusive access to the I/O Expander */
 
-  ret = skel_lock(priv);
+  ret = bl602_expander_lock(priv);
   if (ret < 0)
     {
       return ret;
@@ -382,12 +382,12 @@ static int skel_readbuf(FAR struct ioexpander_dev_s *dev, uint8_t pin,
   /* Read the buffered pin level */
 #warning Missing logic
 
-  skel_unlock(priv);
+  bl602_expander_unlock(priv);
   return ret;
 }
 
 /****************************************************************************
- * Name: skel_getmultibits
+ * Name: bl602_expander_getmultibits
  *
  * Description:
  *  Read multiple bits from I/O Expander registers.
@@ -395,7 +395,7 @@ static int skel_readbuf(FAR struct ioexpander_dev_s *dev, uint8_t pin,
  ****************************************************************************/
 
 #ifdef CONFIG_IOEXPANDER_MULTIPIN
-static int skel_getmultibits(FAR struct skel_dev_s *priv, FAR uint8_t *pins,
+static int bl602_expander_getmultibits(FAR struct bl602_expander_dev_s *priv, FAR uint8_t *pins,
                              FAR bool *values, int count)
 {
   ioe_pinset_t pinset;
@@ -424,7 +424,7 @@ static int skel_getmultibits(FAR struct skel_dev_s *priv, FAR uint8_t *pins,
 #endif
 
 /****************************************************************************
- * Name: skel_multiwritepin
+ * Name: bl602_expander_multiwritepin
  *
  * Description:
  *   Set the pin level for multiple pins. This routine may be faster than
@@ -441,10 +441,10 @@ static int skel_getmultibits(FAR struct skel_dev_s *priv, FAR uint8_t *pins,
  ****************************************************************************/
 
 #ifdef CONFIG_IOEXPANDER_MULTIPIN
-static int skel_multiwritepin(FAR struct ioexpander_dev_s *dev,
+static int bl602_expander_multiwritepin(FAR struct ioexpander_dev_s *dev,
                               FAR uint8_t *pins, FAR bool *values, int count)
 {
-  FAR struct skel_dev_s *priv = (FAR struct skel_dev_s *)dev;
+  FAR struct bl602_expander_dev_s *priv = (FAR struct bl602_expander_dev_s *)dev;
   ioe_pinset_t pinset;
   int pin;
   int ret;
@@ -452,7 +452,7 @@ static int skel_multiwritepin(FAR struct ioexpander_dev_s *dev,
 
   /* Get exclusive access to the I/O Expander */
 
-  ret = skel_lock(priv);
+  ret = bl602_expander_lock(priv);
   if (ret < 0)
     {
       return ret;
@@ -468,7 +468,7 @@ static int skel_multiwritepin(FAR struct ioexpander_dev_s *dev,
       pin = pins[i];
       if (pin >= CONFIG_IOEXPANDER_NPINS)
         {
-          skel_unlock(priv);
+          bl602_expander_unlock(priv);
           return -ENXIO;
         }
 
@@ -485,13 +485,13 @@ static int skel_multiwritepin(FAR struct ioexpander_dev_s *dev,
   /* Now write back the new pins states */
 #warning Missing logic
 
-  skel_unlock(priv);
+  bl602_expander_unlock(priv);
   return ret;
 }
 #endif
 
 /****************************************************************************
- * Name: skel_multireadpin
+ * Name: bl602_expander_multireadpin
  *
  * Description:
  *   Read the actual level for multiple pins. This routine may be faster than
@@ -508,10 +508,10 @@ static int skel_multiwritepin(FAR struct ioexpander_dev_s *dev,
  ****************************************************************************/
 
 #ifdef CONFIG_IOEXPANDER_MULTIPIN
-static int skel_multireadpin(FAR struct ioexpander_dev_s *dev,
+static int bl602_expander_multireadpin(FAR struct ioexpander_dev_s *dev,
                              FAR uint8_t *pins, FAR bool *values, int count)
 {
-  FAR struct skel_dev_s *priv = (FAR struct skel_dev_s *)dev;
+  FAR struct bl602_expander_dev_s *priv = (FAR struct bl602_expander_dev_s *)dev;
   int ret;
 
   gpioinfo("count=%u\n", count);
@@ -520,20 +520,20 @@ static int skel_multireadpin(FAR struct ioexpander_dev_s *dev,
 
   /* Get exclusive access to the I/O Expander */
 
-  ret = skel_lock(priv);
+  ret = bl602_expander_lock(priv);
   if (ret < 0)
     {
       return ret;
     }
 
-  ret = skel_getmultibits(priv, pins, values, count);
-  skel_unlock(priv);
+  ret = bl602_expander_getmultibits(priv, pins, values, count);
+  bl602_expander_unlock(priv);
   return ret;
 }
 #endif
 
 /****************************************************************************
- * Name: skel_multireadbuf
+ * Name: bl602_expander_multireadbuf
  *
  * Description:
  *   Read the buffered level of multiple pins. This routine may be faster
@@ -550,10 +550,10 @@ static int skel_multireadpin(FAR struct ioexpander_dev_s *dev,
  ****************************************************************************/
 
 #ifdef CONFIG_IOEXPANDER_MULTIPIN
-static int skel_multireadbuf(FAR struct ioexpander_dev_s *dev,
+static int bl602_expander_multireadbuf(FAR struct ioexpander_dev_s *dev,
                              FAR uint8_t *pins, FAR bool *values, int count)
 {
-  FAR struct skel_dev_s *priv = (FAR struct skel_dev_s *)dev;
+  FAR struct bl602_expander_dev_s *priv = (FAR struct bl602_expander_dev_s *)dev;
   int ret;
 
   gpioinfo("count=%u\n", count);
@@ -562,20 +562,20 @@ static int skel_multireadbuf(FAR struct ioexpander_dev_s *dev,
 
   /* Get exclusive access to the I/O Expander */
 
-  ret = skel_lock(priv);
+  ret = bl602_expander_lock(priv);
   if (ret < 0)
     {
       return ret;
     }
 
-  ret = skel_getmultibits(priv, pins, values, count);
-  skel_unlock(priv);
+  ret = bl602_expander_getmultibits(priv, pins, values, count);
+  bl602_expander_unlock(priv);
   return ret;
 }
 #endif
 
 /****************************************************************************
- * Name: skel_attach
+ * Name: bl602_expander_attach
  *
  * Description:
  *   Attach a pin interrupt callback function.
@@ -592,16 +592,16 @@ static int skel_multireadbuf(FAR struct ioexpander_dev_s *dev,
  ****************************************************************************/
 
 #ifdef CONFIG_IOEXPANDER_INT_ENABLE
-static int skel_attach(FAR struct ioexpander_dev_s *dev, ioe_pinset_t pinset,
+static int bl602_expander_attach(FAR struct ioexpander_dev_s *dev, ioe_pinset_t pinset,
                        ioe_callback_t callback)
 {
-  FAR struct skel_dev_s *priv = (FAR struct skel_dev_s *)dev;
+  FAR struct bl602_expander_dev_s *priv = (FAR struct bl602_expander_dev_s *)dev;
   int ret;
   int i;
 
   /* Get exclusive access to the I/O Expander */
 
-  ret = skel_lock(priv);
+  ret = bl602_expander_lock(priv);
   if (ret < 0)
     {
       return ret;
@@ -610,7 +610,7 @@ static int skel_attach(FAR struct ioexpander_dev_s *dev, ioe_pinset_t pinset,
   /* Find and available in entry in the callback table */
 
   ret = -ENOSPC;
-  for (i = 0; i < CONFIG_SKELETON_INT_NCALLBACKS; i++)
+  for (i = 0; i < CONFIG_BL602_EXPANDER_INT_NCALLBACKS; i++)
     {
       /* Is this entry available (i.e., no callback attached) */
 
@@ -626,20 +626,20 @@ static int skel_attach(FAR struct ioexpander_dev_s *dev, ioe_pinset_t pinset,
 
   /* Add this callback to the table */
 
-  skel_unlock(priv);
+  bl602_expander_unlock(priv);
   return ret;
 }
 #endif
 
 /****************************************************************************
- * Name: skel_detach_detach
+ * Name: bl602_expander_detach_detach
  *
  * Description:
  *   Detach and disable a pin interrupt callback function.
  *
  * Input Parameters:
  *   dev      - Device-specific state data
- *   handle   - The non-NULL opaque value return by skel_attach_attch()
+ *   handle   - The non-NULL opaque value return by bl602_expander_attach_attch()
  *
  * Returned Value:
  *   0 on success, else a negative error code
@@ -647,16 +647,16 @@ static int skel_attach(FAR struct ioexpander_dev_s *dev, ioe_pinset_t pinset,
  ****************************************************************************/
 
 #ifdef CONFIG_IOEXPANDER_INT_ENABLE
-static int skel_detach(FAR struct ioexpander_dev_s *dev, FAR void *handle)
+static int bl602_expander_detach(FAR struct ioexpander_dev_s *dev, FAR void *handle)
 {
-  FAR struct skel_dev_s *priv = (FAR struct skel_dev_s *)dev;
-  FAR struct skel_callback_s *cb =
-    (FAR struct skel_callback_s *)handle;
+  FAR struct bl602_expander_dev_s *priv = (FAR struct bl602_expander_dev_s *)dev;
+  FAR struct bl602_expander_callback_s *cb =
+    (FAR struct bl602_expander_callback_s *)handle;
 
   DEBUGASSERT(priv != NULL && cb != NULL);
   DEBUGASSERT((uintptr_t)cb >= (uintptr_t)&priv->cb[0] &&
               (uintptr_t)cb <=
-              (uintptr_t)&priv->cb[CONFIG_SKELETON_INT_NCALLBACKS - 1]);
+              (uintptr_t)&priv->cb[CONFIG_BL602_EXPANDER_INT_NCALLBACKS - 1]);
   UNUSED(priv);
 
   cb->pinset = 0;
@@ -667,7 +667,7 @@ static int skel_detach(FAR struct ioexpander_dev_s *dev, FAR void *handle)
 #endif
 
 /****************************************************************************
- * Name: skel_irqworker
+ * Name: bl602_expander_irqworker
  *
  * Description:
  *   Handle GPIO interrupt events (this function actually executes in the
@@ -676,9 +676,9 @@ static int skel_detach(FAR struct ioexpander_dev_s *dev, FAR void *handle)
  ****************************************************************************/
 
 #ifdef CONFIG_IOEXPANDER_INT_ENABLE
-static void skel_irqworker(void *arg)
+static void bl602_expander_irqworker(void *arg)
 {
-  FAR struct skel_dev_s *priv = (FAR struct skel_dev_s *)arg;
+  FAR struct bl602_expander_dev_s *priv = (FAR struct bl602_expander_dev_s *)arg;
   ioe_pinset_t pinset;
   int ret;
   int i;
@@ -688,7 +688,7 @@ static void skel_irqworker(void *arg)
 
   /* Perform pin interrupt callbacks */
 
-  for (i = 0; i < CONFIG_SKELETON_INT_NCALLBACKS; i++)
+  for (i = 0; i < CONFIG_BL602_EXPANDER_INT_NCALLBACKS; i++)
     {
       /* Is this entry valid (i.e., callback attached)?  If so, did andy of
        * the requested pin interrupts occur?
@@ -714,7 +714,7 @@ static void skel_irqworker(void *arg)
 #endif
 
 /****************************************************************************
- * Name: skel_interrupt
+ * Name: bl602_expander_interrupt
  *
  * Description:
  *   Handle GPIO interrupt events (this function executes in the
@@ -722,21 +722,21 @@ static void skel_irqworker(void *arg)
  *
  *   NOTE: A more typical prototype for an interrupt handler would be:
  *
- *     int skel_interrupt(int irq, FAR void *context, FAR void *arg)
+ *     int bl602_expander_interrupt(int irq, FAR void *context, FAR void *arg)
  *
  *   However, it is assume that the lower half, board specific interface
  *   can provide intercept the actual interrupt, and call this function with
  *   the arg that can be mapped to the provide driver structure instance.
  *
  *   Presumably the lower level interface provides an attach() method that
- *   provides both the address of skel_interrupt() as well as the arg value.
+ *   provides both the address of bl602_expander_interrupt() as well as the arg value.
  *
  ****************************************************************************/
 
 #ifdef CONFIG_IOEXPANDER_INT_ENABLE
-static void skel_interrupt(FAR void *arg)
+static void bl602_expander_interrupt(FAR void *arg)
 {
-  FAR struct skel_dev_s *priv = (FAR struct skel_dev_s *)arg;
+  FAR struct bl602_expander_dev_s *priv = (FAR struct bl602_expander_dev_s *)arg;
 
   DEBUGASSERT(priv != NULL);
 
@@ -746,7 +746,7 @@ static void skel_interrupt(FAR void *arg)
    *
    * Notice that further GPIO interrupts are disabled until the work is
    * actually performed.  This is to prevent overrun of the worker thread.
-   * Interrupts are re-enabled in skel_irqworker() when the work is
+   * Interrupts are re-enabled in bl602_expander_irqworker() when the work is
    * completed.
    */
 
@@ -759,7 +759,7 @@ static void skel_interrupt(FAR void *arg)
        * thread.
        */
 
-      work_queue(HPWORK, &priv->work, skel_irqworker,
+      work_queue(HPWORK, &priv->work, bl602_expander_irqworker,
                  (FAR void *)priv, 0);
     }
 
@@ -772,7 +772,7 @@ static void skel_interrupt(FAR void *arg)
  ****************************************************************************/
 
 /****************************************************************************
- * Name: skel_initialize
+ * Name: bl602_expander_initialize
  *
  * Description:
  *   Initialize a I/O Expander device.
@@ -788,14 +788,14 @@ static void skel_interrupt(FAR void *arg)
  *
  ****************************************************************************/
 
-FAR struct ioexpander_dev_s *skel_initialize(void)
+FAR struct ioexpander_dev_s *bl602_expander_initialize(void)
 {
-  FAR struct skel_dev_s *priv;
+  FAR struct bl602_expander_dev_s *priv;
 
-#ifdef CONFIG_skeleton_MULTIPLE
+#ifdef CONFIG_BL602_EXPANDER_MULTIPLE
   /* Allocate the device state structure */
 
-  priv = (FAR struct skel_dev_s *)kmm_zalloc(sizeof(struct skel_dev_s));
+  priv = (FAR struct bl602_expander_dev_s *)kmm_zalloc(sizeof(struct bl602_expander_dev_s));
   if (!priv)
     {
       gpioerr("ERROR: Failed to allocate driver instance\n");
@@ -812,7 +812,7 @@ FAR struct ioexpander_dev_s *skel_initialize(void)
    * any configuration information here as well.
    */
 
-  priv->dev.ops = &g_skel_ops;
+  priv->dev.ops = &g_bl602_expander_ops;
 
 #ifdef CONFIG_IOEXPANDER_INT_ENABLE
   /* Attach the I/O expander interrupt handler and enable interrupts */
@@ -824,4 +824,4 @@ FAR struct ioexpander_dev_s *skel_initialize(void)
   return &priv->dev;
 }
 
-#endif /* CONFIG_IOEXPANDER_skeleton */
+#endif /* CONFIG_IOEXPANDER_BL602_EXPANDER */
