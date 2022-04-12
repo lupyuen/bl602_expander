@@ -1,5 +1,7 @@
 # GPIO Expander for BL602 / BL604 on Apache NuttX RTOS
 
+See https://lupyuen.github.io/articles/pinedio2#gpio-expander
+
 # Install Driver
 
 To add this repo to your NuttX project...
