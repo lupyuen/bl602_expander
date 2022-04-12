@@ -18,7 +18,7 @@ popd
 ```
 Next update the Makefile and Kconfig...
 
--   TODO: [See the modified Makefile and Kconfig]()
+-   [See the modified Makefile and Kconfig](https://github.com/lupyuen/incubator-nuttx/commit/96f26693070eb9d6bbbf016ac6375ef041e3b24a?diff=unified)
 
 Then update the NuttX Build Config...
 
