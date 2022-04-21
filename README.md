@@ -87,7 +87,7 @@ nuttx/boards/xtensa/esp32/esp32-devkitc/src/esp32_bringup.c
 
 And call `bl602_expander_initialize` to initialise our driver, just after `bl602_gpio_initialize`:
 
-https://github.com/lupyuen/incubator-nuttx/blob/expander/boards/risc-v/bl602/bl602evb/src/bl602_bringup.c#L827-L874
+https://github.com/lupyuen/incubator-nuttx/blob/expander/boards/risc-v/bl602/bl602evb/src/bl602_bringup.c#L643-L699
 
 ```c
 #ifdef CONFIG_IOEXPANDER_BL602_EXPANDER
@@ -111,7 +111,7 @@ int bl602_bringup(void) {
   /* This is new code */
 
 #ifdef CONFIG_IOEXPANDER_BL602_EXPANDER
-  /* Get an instance of the BL602 GPIO Expander */
+  /* Must load BL602 GPIO Expander before other drivers */
 
   FAR struct ioexpander_dev_s *ioe = bl602_expander_initialize();
   if (ioe == NULL)
