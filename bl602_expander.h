@@ -28,10 +28,22 @@
 #include <nuttx/ioexpander/ioexpander.h>
 
 /****************************************************************************
+ * Public Data
+ ****************************************************************************/
+
+#ifdef CONFIG_IOEXPANDER_BL602_EXPANDER
+/* Public instance of BL602 GPIO Expander */
+
+extern FAR struct ioexpander_dev_s *bl602_expander;
+#endif
+
+/****************************************************************************
  * Public Function Prototypes
  ****************************************************************************/
 
 #ifdef CONFIG_IOEXPANDER_BL602_EXPANDER
+/* Init BL602 GPIO Expander */
+
 FAR struct ioexpander_dev_s *bl602_expander_initialize(void);
 #endif
 
