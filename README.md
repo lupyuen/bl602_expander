@@ -38,7 +38,7 @@ popd
 ```
 Next update the Makefile and Kconfig...
 
--   [See the modified Makefile and Kconfig](https://github.com/lupyuen/incubator-nuttx/commit/96f26693070eb9d6bbbf016ac6375ef041e3b24a?diff=unified)
+-   [See the modified Makefile and Kconfig](https://github.com/lupyuen/incubator-nuttx/commit/f72f7d546aa9b458b5cca66d090ac46ea178ca63)
 
 Then update the NuttX Build Config...
 
@@ -52,11 +52,11 @@ cp .config ../config
 ## Erase the Build Config and Kconfig files
 make distclean
 
-## For BL602: Configure the build for BL602
-./tools/configure.sh bl602evb:nsh
-
 ## For PineDio Stack BL604: Configure the build for BL604
 ./tools/configure.sh bl602evb:pinedio
+
+## For BL602: Configure the build for BL602
+./tools/configure.sh bl602evb:nsh
 
 ## For ESP32: Configure the build for ESP32.
 ## TODO: Change "esp32-devkitc" to our ESP32 board.
@@ -91,6 +91,7 @@ https://github.com/lupyuen/incubator-nuttx/blob/expander/boards/risc-v/bl602/bl6
 
 ```c
 #ifdef CONFIG_IOEXPANDER_BL602_EXPANDER
+#include <nuttx/ioexpander/gpio.h>
 #include <nuttx/ioexpander/bl602_expander.h>
 #endif /* CONFIG_IOEXPANDER_BL602_EXPANDER */
 ...
@@ -148,7 +149,7 @@ int bl602_bringup(void) {
 
 We need to disable BL602 GPIO Driver when we enable GPIO Expander, because GPIO Expander needs GPIO Lower Half which can't coexist with BL602 GPIO Driver:
 
-https://github.com/lupyuen/incubator-nuttx/blob/expander/boards/risc-v/bl602/bl602evb/src/bl602_bringup.c#L635
+https://github.com/lupyuen/incubator-nuttx/blob/expander/boards/risc-v/bl602/bl602evb/src/bl602_bringup.c#L643
 
 ```c
 #if defined(CONFIG_DEV_GPIO) && !defined(CONFIG_GPIO_LOWER_HALF)
