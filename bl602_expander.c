@@ -48,6 +48,10 @@
  ****************************************************************************/
 
 #ifdef CONFIG_IOEXPANDER_INT_ENABLE
+/* Interrupt Handler */
+
+typedef int isr_handler(int irq, FAR void *context, FAR void *arg);
+
 /* This type represents on registered pin interrupt callback */
 
 struct bl602_expander_callback_s
@@ -371,41 +375,50 @@ static int bl602_expander_irq_enable(bool enable)
 
 static int bl602_expander_interrupt(int irq, void *context, void *arg)
 {
-  ////TODO: FAR struct bl602_gpint_dev_s *dev = (FAR struct bl602_gpint_dev_s *)arg;
+  FAR struct bl602_expander_dev_s *dev = (FAR struct bl602_expander_dev_s *)arg;
   uint32_t time_out = 0;
   uint8_t gpio_pin;
 
-  ////TODO: DEBUGASSERT(dev != NULL);
-  DEBUGASSERT(bl602_expander_callback != NULL);
-  gpioinfo("Interrupt! callback=%p, arg=%p\n", bl602_expander_callback, bl602_expander_arg);
+  gpioinfo("Interrupt! context=%p, dev=%p\n", context, dev);
+  DEBUGASSERT(dev != NULL);
 
-  gpio_pin = (bl602_expander_pinset & GPIO_PIN_MASK) >> GPIO_PIN_SHIFT;
+  /* TODO: Check only the GPIO Pins that have registered for interrupts */
 
-  if (1 == bl602_expander_get_intstatus(gpio_pin))
+  for (gpio_pin = 0; gpio_pin < CONFIG_IOEXPANDER_NPINS; gpio_pin++)
     {
-      bl602_expander_intclear(gpio_pin, 1);
+      /* Found the GPIO for the interrupt */
 
-      /* timeout check */
-
-      time_out = 32;
-      do
+      if (1 == bl602_expander_get_intstatus(gpio_pin))
         {
-          time_out--;
-        }
-      while ((1 == bl602_expander_get_intstatus(gpio_pin)) && time_out);
-      if (!time_out)
-        {
-          gpiowarn("WARNING: Clear GPIO interrupt status fail.\n");
-        }
+          /* Attempt to clear the Interrupt Status */
 
-      /* if time_out==0, GPIO interrupt status not cleared */
+          bl602_expander_intclear(gpio_pin, 1);
 
-      bl602_expander_intclear(gpio_pin, 0);
+          /* Check Interrupt Status with timeout */
+
+          time_out = 32;
+          do
+            {
+              time_out--;
+            }
+          while ((1 == bl602_expander_get_intstatus(gpio_pin)) && time_out);
+          if (!time_out)
+            {
+              gpiowarn("WARNING: Clear GPIO interrupt status fail.\n");
+            }
+
+          /* If time_out==0, Interrupt Status not cleared */
+
+          bl602_expander_intclear(gpio_pin, 0);
+
+          /* Call the callback */
+
+          DEBUGASSERT(bl602_expander_callback != NULL);
+          gpioinfo("Call gpio=%d, callback=%p, arg=%p\n", gpio_pin, bl602_expander_callback, bl602_expander_arg);
+          bl602_expander_callback(irq, context, bl602_expander_arg);
+          ////TODO Previously: bl602_expander_callback(&bl602xgpint->bl602gpio.gpio, gpio_pin);
+        }
     }
-
-  gpioinfo("Call callback=%p, arg=%p\n", bl602_expander_callback, bl602_expander_arg);
-  bl602_expander_callback(irq, context, bl602_expander_arg);
-  ////TODO Previously: bl602_expander_callback(&bl602xgpint->bl602gpio.gpio, gpio_pin);
 
   return OK;
 }
@@ -1083,7 +1096,7 @@ FAR struct ioexpander_dev_s *bl602_expander_initialize(void)
 #ifdef CONFIG_IOEXPANDER_INT_ENABLE
   /* Attach the I/O expander interrupt handler and enable interrupts */
 
-  irq_attach(BL602_IRQ_GPIO_INT0, bl602_expander_interrupt, dev);
+  irq_attach(BL602_IRQ_GPIO_INT0, bl602_expander_interrupt, priv);
 
   ret = bl602_irq_enable(true);
   if (ret < 0)
