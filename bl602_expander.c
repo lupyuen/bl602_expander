@@ -37,8 +37,6 @@
 #include "../arch/risc-v/src/common/riscv_internal.h"
 #include "../arch/risc-v/src/bl602/bl602_gpio.h"
 
-////#undef CONFIG_IOEXPANDER_INT_ENABLE ////
-
 #if defined(CONFIG_IOEXPANDER_BL602_EXPANDER)
 
 /****************************************************************************
