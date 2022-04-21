@@ -32,8 +32,12 @@
 #include <nuttx/semaphore.h>
 #include <nuttx/ioexpander/ioexpander.h>
 #include <nuttx/ioexpander/bl602_expander.h>
+#include <nuttx/ioexpander/gpio.h>
+#include <arch/board/board.h>
+#include "../arch/risc-v/src/common/riscv_internal.h"
+#include "../arch/risc-v/src/bl602/bl602_gpio.h"
 
-#undef CONFIG_IOEXPANDER_INT_ENABLE ////
+////#undef CONFIG_IOEXPANDER_INT_ENABLE ////
 
 #if defined(CONFIG_IOEXPANDER_BL602_EXPANDER)
 
@@ -52,6 +56,7 @@ struct bl602_expander_callback_s
 {
   ioe_pinset_t pinset;          /* Set of pin interrupts that will generate the callback */
   ioe_callback_t cbfunc;        /* The saved callback function pointer */
+  FAR void* cbarg;              /* The saved callback argument */
 };
 #endif
 
@@ -144,6 +149,143 @@ static const struct ioexpander_ops_s g_bl602_expander_ops =
 /****************************************************************************
  * Private Functions
  ****************************************************************************/
+
+/****************************************************************************
+ * Name: bl602_expander_intmask
+ *
+ * Description:
+ *   Set Interrupt Mask for a GPIO Pin. Based on
+ *   https://github.com/lupyuen/incubator-nuttx/blob/touch/boards/risc-v/bl602/bl602evb/src/bl602_gpio.c#L143-L169
+ *
+ ****************************************************************************/
+
+static void bl602_expander_intmask(uint8_t gpio_pin, int intmask)
+{
+  uint32_t tmp_val;
+
+  if (gpio_pin < GPIO_PIN28)
+    {
+      tmp_val = getreg32(BL602_GPIO_INT_MASK1);
+      if (intmask == 1)
+        {
+          tmp_val |= (1 << gpio_pin);
+        }
+      else
+        {
+          tmp_val &= ~(1 << gpio_pin);
+        }
+
+      putreg32(tmp_val, BL602_GPIO_INT_MASK1);
+    }
+  else
+    {
+      gpioerr("Invalid pin %d\n", gpio_pin);
+      DEBUGPANIC();
+    }
+}
+
+/****************************************************************************
+ * Name: bl602_expander_set_intmod
+ *
+ * Description:
+ *   Set GPIO Interrupt Mode. Based on
+ *   https://github.com/lupyuen/incubator-nuttx/blob/touch/boards/risc-v/bl602/bl602evb/src/bl602_gpio.c#L171-L212
+ *
+ ****************************************************************************/
+
+static void bl602_expander_set_intmod(uint8_t gpio_pin,
+              uint8_t int_ctlmod, uint8_t int_trgmod)
+{
+  gpioinfo("gpio_pin=%d, int_ctlmod=%d, int_trgmod=%d\n", gpio_pin, int_ctlmod, int_trgmod); ////
+  uint32_t tmp_val;
+
+  if (gpio_pin < GPIO_PIN10)
+    {
+      /* GPIO0 ~ GPIO9 */
+
+      tmp_val = gpio_pin;
+      modifyreg32(BL602_GPIO_INT_MODE_SET1,
+                  0x7 << (3 * tmp_val),
+                  ((int_ctlmod << 2) | int_trgmod) << (3 * tmp_val));
+    }
+  else if (gpio_pin < GPIO_PIN20)
+    {
+      /* GPIO10 ~ GPIO19 */
+
+      tmp_val = gpio_pin - GPIO_PIN10;
+      modifyreg32(BL602_GPIO_INT_MODE_SET2,
+                  0x7 << (3 * tmp_val),
+                  ((int_ctlmod << 2) | int_trgmod) << (3 * tmp_val));
+    }
+  else if (gpio_pin < GPIO_PIN28)
+    {
+      /* GPIO20 ~ GPIO27 */
+
+      tmp_val = gpio_pin - GPIO_PIN20;
+      modifyreg32(BL602_GPIO_INT_MODE_SET3,
+                  0x7 << (3 * tmp_val),
+                  ((int_ctlmod << 2) | int_trgmod) << (3 * tmp_val));
+    }
+  else
+    {
+      gpioerr("Invalid pin %d\n", gpio_pin);
+      DEBUGPANIC();
+    }
+}
+
+/****************************************************************************
+ * Name: bl602_expander_get_intstatus
+ *
+ * Description:
+ *   Get GPIO Interrupt Status. Based on
+ *   https://github.com/lupyuen/incubator-nuttx/blob/touch/boards/risc-v/bl602/bl602evb/src/bl602_gpio.c#L214-L234
+ *
+ ****************************************************************************/
+
+static int bl602_expander_get_intstatus(uint8_t gpio_pin)
+{
+  uint32_t tmp_val = 0;
+
+  if (gpio_pin < GPIO_PIN28)
+    {
+      /* GPIO0 ~ GPIO27 */
+
+      tmp_val = getreg32(BL602_GPIO_INT_STAT1);
+    }
+  else
+    {
+      gpioerr("Invalid pin %d\n", gpio_pin);
+      DEBUGPANIC();
+    }
+
+  return (tmp_val & (1 << gpio_pin)) ? 1 : 0;
+}
+
+/****************************************************************************
+ * Name: bl602_expander_intclear
+ *
+ * Description:
+ *   Clear GPIO Interrupt. Based on
+ *   https://github.com/lupyuen/incubator-nuttx/blob/touch/boards/risc-v/bl602/bl602evb/src/bl602_gpio.c#L236-L254
+ *
+ ****************************************************************************/
+
+static void bl602_expander_intclear(uint8_t gpio_pin, uint8_t int_clear)
+{
+  if (gpio_pin < GPIO_PIN28)
+    {
+      /* GPIO0 ~ GPIO27 */
+
+      modifyreg32(BL602_GPIO_INT_CLR1,
+                  int_clear ? 0 : (1 << gpio_pin),
+                  int_clear ? (1 << gpio_pin) : 0);
+    }
+  else
+    {
+      gpioerr("Invalid pin %d\n", gpio_pin);
+      DEBUGPANIC();
+    }
+}
 
 /****************************************************************************
  * Name: bl602_expander_lock
@@ -703,7 +845,7 @@ static void bl602_expander_irqworker(void *arg)
             {
               /* Yes.. perform the callback */
 
-              priv->cb[i].cbfunc(&priv->dev, match);
+              priv->cb[i].cbfunc(&priv->dev, match, priv->cb[i].cbarg);
             }
         }
     }
