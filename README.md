@@ -154,3 +154,46 @@ https://github.com/lupyuen/incubator-nuttx/blob/expander/boards/risc-v/bl602/bl6
 ```c
 #if defined(CONFIG_DEV_GPIO) && !defined(CONFIG_GPIO_LOWER_HALF)
 ```
+
+# Output Log
+
+```text
+spi_test_driver_register: devpath=/dev/spitest0, spidev=0
+bl602_expander_set_intmod: gpio_pin=9, int_ctlmod=1, int_trgmod=0
+bl602_irq_attach: Attach 0x2305e692
+bl602_irq_enable: Disable interrupt
+bl602_irq_enable: Enable interrupt
+bl602_expander_direction: pin=3 direction=IN
+bl602_expander_direction: pin=3 direction=IN
+gpio_pin_register: Registering /dev/gpio3
+bl602_expander_direction: pin=4 direction=OUT
+bl602_expander_direction: pin=4 direction=OUT
+gpio_pin_register: Registering /dev/gpio4
+bl602_expander_direction: pin=5 direction=IN
+gplh_enable: pin5: Disabling callback=0 handle=0
+gplh_enable: WARNING: pin5: Already detached
+gpio_pin_register: Registering /dev/gpio5
+bl602_expander_direction: pin=6 direction=IN
+gplh_enable: pin6: Disabling callback=0 handle=0
+gplh_enable: WARNING: pin6: Already detached
+gpio_pin_register: Registering /dev/gpio6
+
+NuttShell (NSH) NuttX-10.3.0-RC0
+nsh> ls /dev
+/dev:
+ console
+ gpio3
+ gpio4
+ gpio5
+ gpio6
+ i2c0
+ input0
+ lcd0
+ null
+ spi0
+ spitest0
+ timer0
+ urandom
+ zero
+nsh>
+```
