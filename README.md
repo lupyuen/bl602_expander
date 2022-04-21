@@ -85,7 +85,7 @@ nuttx/boards/risc-v/bl602/bl602evb/src/bl602_bringup.c
 nuttx/boards/xtensa/esp32/esp32-devkitc/src/esp32_bringup.c
 ```
 
-And call `bl602_expander_initialize` to initialise our driver:
+And call `bl602_expander_initialize` to initialise our driver, just after `bl602_gpio_initialize`:
 
 https://github.com/lupyuen/incubator-nuttx/blob/expander/boards/risc-v/bl602/bl602evb/src/bl602_bringup.c#L827-L874
 
@@ -97,6 +97,19 @@ https://github.com/lupyuen/incubator-nuttx/blob/expander/boards/risc-v/bl602/bl6
 ...
 int bl602_bringup(void) {
   ...
+  /* This is existing code */
+
+#if defined(CONFIG_DEV_GPIO) && !defined(CONFIG_GPIO_LOWER_HALF)
+  ret = bl602_gpio_initialize();
+  if (ret < 0)
+    {
+      syslog(LOG_ERR, "Failed to initialize GPIO Driver: %d\n", ret);
+      return ret;
+    }
+#endif
+
+  /* This is new code */
+
 #ifdef CONFIG_IOEXPANDER_BL602_EXPANDER
   /* Get an instance of the BL602 GPIO Expander */
 
@@ -146,6 +159,8 @@ int bl602_bringup(void) {
   gpio_lower_half(ioe, 6, GPIO_INTERRUPT_PIN, 6);
 #endif /* CONFIG_IOEXPANDER_BL602_EXPANDER */
 ```
+
+We must load the GPIO Expander before other drivers (e.g. CST816S Touch Panel), because GPIO Expander provides GPIO functions for the drivers.
 
 We need to disable BL602 GPIO Driver when we enable GPIO Expander, because GPIO Expander needs GPIO Lower Half which can't coexist with BL602 GPIO Driver:
 
