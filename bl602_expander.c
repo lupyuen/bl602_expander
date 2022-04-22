@@ -107,13 +107,11 @@ static int bl602_expander_multireadbuf(FAR struct ioexpander_dev_s *dev,
                              FAR uint8_t *pins, FAR bool *values, int count);
 #endif
 #ifdef CONFIG_IOEXPANDER_INT_ENABLE
-static int bl602_expander_attach(FAR struct ioexpander_dev_s *dev,
-                       ioe_pinset_t pinset, ioe_callback_t callback);
+static FAR void *bl602_expander_attach(FAR struct ioexpander_dev_s *dev,
+                       ioe_pinset_t pinset,
+                       ioe_callback_t callback, FAR void *arg);
 static int bl602_expander_detach(FAR struct ioexpander_dev_s *dev,
                        FAR void *handle);
-
-static void bl602_expander_irqworker(void *arg);
-static void bl602_expander_interrupt(FAR void *arg);
 #endif
 
 /****************************************************************************
@@ -293,23 +291,26 @@ static void bl602_expander_intclear(uint8_t gpio_pin, uint8_t int_clear)
  * Name: bl602_expander_irq_attach
  *
  * Description:
- *   Attach Interrupt Handler to GPIO Interrupt for Touch Controller.
+ *   Attach Interrupt Handler to GPIO Interrupt.
  *   Based on https://github.com/lupyuen/incubator-nuttx/blob/touch/boards/risc-v/bl602/bl602evb/src/bl602_gpio.c#L477-L505 
  *
  ****************************************************************************/
 
-static int bl602_expander_irq_attach(gpio_pinset_t pinset, FAR isr_handler *callback, FAR void *arg)
+static int NOTUSED_bl602_expander_irq_attach(gpio_pinset_t pinset, FAR isr_handler *callback, FAR void *arg)
 {
   int ret = 0;
   uint8_t gpio_pin = (pinset & GPIO_PIN_MASK) >> GPIO_PIN_SHIFT;
-  FAR struct bl602_gpint_dev_s *dev = NULL;  //  TODO
+  ////FAR struct bl602_gpint_dev_s *dev = NULL;
 
   DEBUGASSERT(callback != NULL);
 
   /* Configure the pin that will be used as interrupt input */
 
-  #warning Check GLB_GPIO_INT_TRIG_NEG_PULSE  ////  TODO
+  #warning TODO: bl602_expander_set_intmod
+  #warning TODO: Check GLB_GPIO_INT_TRIG_NEG_PULSE  ////  TODO
   bl602_expander_set_intmod(gpio_pin, 1, GLB_GPIO_INT_TRIG_NEG_PULSE);
+
+  #warning TODO: bl602_configgpio
   ret = bl602_configgpio(pinset);
   if (ret < 0)
     {
@@ -319,13 +320,10 @@ static int bl602_expander_irq_attach(gpio_pinset_t pinset, FAR isr_handler *call
 
   /* Make sure the interrupt is disabled */
 
-  bl602_expander_pinset = pinset;
-  bl602_expander_callback = callback;
-  bl602_expander_arg = arg;
-  bl602_expander_intmask(gpio_pin, 1);
+  ////bl602_expander_intmask(gpio_pin, 1);
 
   ////irq_attach(BL602_IRQ_GPIO_INT0, bl602_expander_interrupt, dev);
-  bl602_expander_intmask(gpio_pin, 0);
+  ////bl602_expander_intmask(gpio_pin, 0);
 
   gpioinfo("Attach %p\n", callback);
 
@@ -336,7 +334,7 @@ static int bl602_expander_irq_attach(gpio_pinset_t pinset, FAR isr_handler *call
  * Name: bl602_expander_irq_enable
  *
  * Description:
- *   Enable or disable GPIO Interrupt for Touch Controller.
+ *   Enable or disable GPIO Interrupt.
  *   Based on https://github.com/lupyuen/incubator-nuttx/blob/touch/boards/risc-v/bl602/bl602evb/src/bl602_gpio.c#L507-L535
  *
  ****************************************************************************/
@@ -345,15 +343,8 @@ static int bl602_expander_irq_enable(bool enable)
 {
   if (enable)
     {
-      if (bl602_expander_callback != NULL)
-        {
-          gpioinfo("Enable interrupt\n");
-          up_enable_irq(BL602_IRQ_GPIO_INT0);
-        }
-      else
-        {
-          gpiowarn("No callback attached\n");
-        }
+      gpioinfo("Enable interrupt\n");
+      up_enable_irq(BL602_IRQ_GPIO_INT0);
     }
   else
     {
@@ -375,12 +366,12 @@ static int bl602_expander_irq_enable(bool enable)
 
 static int bl602_expander_interrupt(int irq, void *context, void *arg)
 {
-  FAR struct bl602_expander_dev_s *dev = (FAR struct bl602_expander_dev_s *)arg;
+  FAR struct bl602_expander_dev_s *priv = (FAR struct bl602_expander_dev_s *)arg;
   uint32_t time_out = 0;
   uint8_t gpio_pin;
 
-  gpioinfo("Interrupt! context=%p, dev=%p\n", context, dev);
-  DEBUGASSERT(dev != NULL);
+  gpioinfo("Interrupt! context=%p, priv=%p\n", context, priv);
+  DEBUGASSERT(priv != NULL);
 
   /* TODO: Check only the GPIO Pins that have registered for interrupts */
 
@@ -390,6 +381,10 @@ static int bl602_expander_interrupt(int irq, void *context, void *arg)
 
       if (1 == bl602_expander_get_intstatus(gpio_pin))
         {
+          FAR struct bl602_expander_callback_s *cb = &priv->cb[gpio_pin];
+          ioe_callback_t cbfunc = cb->cbfunc;
+          FAR void* cbarg = cb->cbarg;
+
           /* Attempt to clear the Interrupt Status */
 
           bl602_expander_intclear(gpio_pin, 1);
@@ -413,10 +408,15 @@ static int bl602_expander_interrupt(int irq, void *context, void *arg)
 
           /* Call the callback */
 
-          DEBUGASSERT(bl602_expander_callback != NULL);
-          gpioinfo("Call gpio=%d, callback=%p, arg=%p\n", gpio_pin, bl602_expander_callback, bl602_expander_arg);
-          bl602_expander_callback(irq, context, bl602_expander_arg);
-          ////TODO Previously: bl602_expander_callback(&bl602xgpint->bl602gpio.gpio, gpio_pin);
+          if (cbfunc == NULL)
+            {
+              gpioinfo("Missing callback for GPIO %d\n", gpio_pin);
+            }
+          else
+            {
+              gpioinfo("Call gpio=%d, callback=%p, arg=%p\n", gpio_pin, cbfunc, cbarg);
+              cbfunc(&priv->dev, gpio_pin, cbarg);
+            }
         }
     }
 
@@ -480,7 +480,7 @@ static int bl602_expander_direction(FAR struct ioexpander_dev_s *dev, uint8_t pi
     }
 
   /* Set the pin direction in the I/O Expander */
-#warning Missing logic
+#warning TODO: bl602_expander_direction
 
   bl602_expander_unlock(priv);
   return ret;
@@ -528,7 +528,7 @@ static int bl602_expander_option(FAR struct ioexpander_dev_s *dev, uint8_t pin,
         }
 
       /* Set the pin option */
-#warning Missing logic
+#warning TODO: bl602_expander_option
 
       bl602_expander_unlock(priv);
     }
@@ -572,7 +572,7 @@ static int bl602_expander_writepin(FAR struct ioexpander_dev_s *dev, uint8_t pin
     }
 
   /* Write the pin value */
-#warning Missing logic
+#warning TODO: bl602_expander_writepin
 
   bl602_expander_unlock(priv);
   return ret;
@@ -617,10 +617,10 @@ static int bl602_expander_readpin(FAR struct ioexpander_dev_s *dev, uint8_t pin,
     }
 
   /* Read the pin value */
-#warning Missing logic
+#warning TODO: bl602_expander_readpin
 
   /* Return the pin value via the value pointer */
-#warning Missing logic
+#warning TODO: bl602_expander_readpin
 
   bl602_expander_unlock(priv);
   return ret;
@@ -658,7 +658,7 @@ static int bl602_expander_readbuf(FAR struct ioexpander_dev_s *dev, uint8_t pin,
     }
 
   /* Read the buffered pin level */
-#warning Missing logic
+#warning TODO: bl602_expander_readbuf
 
   bl602_expander_unlock(priv);
   return ret;
@@ -860,9 +860,10 @@ static int bl602_expander_multireadbuf(FAR struct ioexpander_dev_s *dev,
  *
  * Input Parameters:
  *   dev      - Device-specific state data
- *   pinset   - The set of pin events that will generate the callback
+ *   gpio_pin - GPIO Pin for the callback (only 1 supported, not a pinset)
  *   callback - The pointer to callback function.  NULL will detach the
  *              callback.
+ *   arg      - Argument that will be provided to the callback function
  *
  * Returned Value:
  *   0 on success, else a negative error code
@@ -870,42 +871,58 @@ static int bl602_expander_multireadbuf(FAR struct ioexpander_dev_s *dev,
  ****************************************************************************/
 
 #ifdef CONFIG_IOEXPANDER_INT_ENABLE
-static int bl602_expander_attach(FAR struct ioexpander_dev_s *dev, ioe_pinset_t pinset,
-                       ioe_callback_t callback)
+static FAR void *bl602_expander_attach(FAR struct ioexpander_dev_s *dev,
+                       ioe_pinset_t gpio_pin,
+                       ioe_callback_t callback, FAR void *arg)
 {
   FAR struct bl602_expander_dev_s *priv = (FAR struct bl602_expander_dev_s *)dev;
-  int ret;
-  int i;
+  FAR struct bl602_expander_callback_s *cb;
+  int ret = 0;
+
+  DEBUGASSERT(priv != NULL);
+  DEBUGASSERT(gpio_pin < CONFIG_IOEXPANDER_NPINS);
+  cb = &priv->cb[gpio_pin];
 
   /* Get exclusive access to the I/O Expander */
 
   ret = bl602_expander_lock(priv);
   if (ret < 0)
     {
-      return ret;
+      gpioerr("ERROR: Lock failed\n");
+      return NULL;
     }
 
-  /* Find and available in entry in the callback table */
+  /* Set the GPIO callback */
 
-  ret = -ENOSPC;
-  for (i = 0; i < CONFIG_IOEXPANDER_NPINS; i++)
+  if (cb->cbfunc == NULL)
     {
-      /* Is this entry available (i.e., no callback attached) */
-
-      if (priv->cb[i].cbfunc == NULL)
-        {
-          /* Yes.. use this entry */
-
-          priv->cb[i].pinset = pinset;
-          priv->cb[i].cbfunc = callback;
-          ret = OK;
-        }
+      gpioinfo("Attach callback for gpio=%d, callback=%p, arg=%p\n", gpio_pin, callback, arg);
+      cb->pinset = gpio_pin;
+      cb->cbfunc = callback;
+      cb->cbarg  = arg;
+      ret = 0;
+    }
+  else
+    {
+      gpioerr("ERROR: GPIO %d already attached\n", gpio_pin);
+      ret = -EBUSY;
     }
 
-  /* Add this callback to the table */
+  /* Enable the GPIO Interrupt */
+
+  bl602_expander_intmask(gpio_pin, 0);
+
+  /* Unlock the I/O Expander */
 
   bl602_expander_unlock(priv);
-  return ret;
+  if (ret == 0)
+    {
+      return cb;
+    }
+  else
+    {
+      return NULL;
+    }
 }
 #endif
 
@@ -936,6 +953,15 @@ static int bl602_expander_detach(FAR struct ioexpander_dev_s *dev, FAR void *han
               (uintptr_t)cb <=
               (uintptr_t)&priv->cb[CONFIG_IOEXPANDER_NPINS - 1]);
   UNUSED(priv);
+  gpioinfo("Detach callback for gpio=%d, callback=%p, arg=%p\n",
+           cb->pinset, cb->cbfunc, cb->cbarg);
+
+  /* Disable the GPIO Interrupt */
+
+  DEBUGASSERT(cb->pinset < CONFIG_IOEXPANDER_NPINS);
+  bl602_expander_intmask(cb->pinset, 1);
+
+  /* Clear the GPIO callback */
 
   cb->pinset = 0;
   cb->cbfunc = NULL;
@@ -944,6 +970,7 @@ static int bl602_expander_detach(FAR struct ioexpander_dev_s *dev, FAR void *han
 }
 #endif
 
+#ifdef NOTUSED
 /****************************************************************************
  * Name: bl602_expander_irqworker
  *
@@ -953,7 +980,6 @@ static int bl602_expander_detach(FAR struct ioexpander_dev_s *dev, FAR void *han
  *
  ****************************************************************************/
 
-#ifdef CONFIG_IOEXPANDER_INT_ENABLE
 static void bl602_expander_irqworker(void *arg)
 {
   FAR struct bl602_expander_dev_s *priv = (FAR struct bl602_expander_dev_s *)arg;
@@ -989,8 +1015,9 @@ static void bl602_expander_irqworker(void *arg)
   /* Re-enable interrupts */
 #warning Missing logic
 }
-#endif
+#endif /* NOTUSED */
 
+#ifdef NOTUSED
 /****************************************************************************
  * Name: bl602_expander_interrupt
  *
@@ -1011,7 +1038,6 @@ static void bl602_expander_irqworker(void *arg)
  *
  ****************************************************************************/
 
-#ifdef CONFIG_IOEXPANDER_INT_ENABLE
 static void bl602_expander_interrupt(FAR void *arg)
 {
   FAR struct bl602_expander_dev_s *priv = (FAR struct bl602_expander_dev_s *)arg;
@@ -1043,7 +1069,7 @@ static void bl602_expander_interrupt(FAR void *arg)
 
   return OK;
 }
-#endif
+#endif /* NOTUSED */
 
 /****************************************************************************
  * Public Functions
@@ -1069,6 +1095,7 @@ static void bl602_expander_interrupt(FAR void *arg)
 FAR struct ioexpander_dev_s *bl602_expander_initialize(void)
 {
   int ret;
+  uint8_t gpio_pin;
   FAR struct bl602_expander_dev_s *priv;
 
 #ifdef CONFIG_BL602_EXPANDER_MULTIPLE
@@ -1094,11 +1121,19 @@ FAR struct ioexpander_dev_s *bl602_expander_initialize(void)
   priv->dev.ops = &g_bl602_expander_ops;
 
 #ifdef CONFIG_IOEXPANDER_INT_ENABLE
+
+  /* Disable interrupts for all GPIO Pins */
+
+  for (gpio_pin = 0; gpio_pin < CONFIG_IOEXPANDER_NPINS; gpio_pin++)
+    {
+      bl602_expander_intmask(gpio_pin, 1);
+    }
+
   /* Attach the I/O expander interrupt handler and enable interrupts */
 
   irq_attach(BL602_IRQ_GPIO_INT0, bl602_expander_interrupt, priv);
 
-  ret = bl602_irq_enable(true);
+  ret = bl602_expander_irq_enable(true);
   if (ret < 0)
     {
       gpioerr("ERROR: Failed to enable interrupts\n");
