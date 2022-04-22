@@ -406,7 +406,7 @@ static int bl602_expander_interrupt(int irq, void *context, void *arg)
 
           bl602_expander_intclear(gpio_pin, 0);
 
-          /* Call the callback */
+          /* NOTE: Callback will run in the context of Interrupt Handler */
 
           if (cbfunc == NULL)
             {
@@ -860,13 +860,14 @@ static int bl602_expander_multireadbuf(FAR struct ioexpander_dev_s *dev,
  *
  * Input Parameters:
  *   dev      - Device-specific state data
- *   gpio_pin - GPIO Pin for the callback (only 1 supported, not a pinset)
+ *   gpio_pin - GPIO Pin for the callback (Only 1 pin supported, not a pinset)
  *   callback - The pointer to callback function.  NULL will detach the
- *              callback.
+ *              callback. NOTE: Callback will run in the context of
+ *              Interrupt Handler.
  *   arg      - Argument that will be provided to the callback function
  *
  * Returned Value:
- *   0 on success, else a negative error code
+ *   Callback Handle on success, else NULL
  *
  ****************************************************************************/
 
@@ -892,25 +893,35 @@ static FAR void *bl602_expander_attach(FAR struct ioexpander_dev_s *dev,
       return NULL;
     }
 
-  /* Set the GPIO callback */
-
-  if (cb->cbfunc == NULL)
+  if (callback == NULL) /* Detach Callback */
     {
-      gpioinfo("Attach callback for gpio=%d, callback=%p, arg=%p\n", gpio_pin, callback, arg);
+      /* Disable GPIO Interrupt and clear Interrupt Callback */
+
+      gpioinfo("Detach callback for gpio=%d, callback=%p, arg=%p\n",
+              cb->pinset, cb->cbfunc, cb->cbarg);
+      bl602_expander_intmask(gpio_pin, 1);
+      cb->pinset = 0;
+      cb->cbfunc = NULL;
+      cb->cbarg  = NULL;
+      ret = 0;
+    }
+  else if (cb->cbfunc == NULL) /* Attach Callback */
+    {
+      /* Set Interrupt Callback and enable GPIO Interrupt */
+
+      gpioinfo("Attach callback for gpio=%d, callback=%p, arg=%p\n", 
+               gpio_pin, callback, arg);
       cb->pinset = gpio_pin;
       cb->cbfunc = callback;
       cb->cbarg  = arg;
+      bl602_expander_intmask(gpio_pin, 0);
       ret = 0;
     }
-  else
+  else /* Callback already attached */
     {
       gpioerr("ERROR: GPIO %d already attached\n", gpio_pin);
       ret = -EBUSY;
     }
-
-  /* Enable the GPIO Interrupt */
-
-  bl602_expander_intmask(gpio_pin, 0);
 
   /* Unlock the I/O Expander */
 
@@ -961,7 +972,7 @@ static int bl602_expander_detach(FAR struct ioexpander_dev_s *dev, FAR void *han
   DEBUGASSERT(cb->pinset < CONFIG_IOEXPANDER_NPINS);
   bl602_expander_intmask(cb->pinset, 1);
 
-  /* Clear the GPIO callback */
+  /* Clear the Interrupt Callback */
 
   cb->pinset = 0;
   cb->cbfunc = NULL;
