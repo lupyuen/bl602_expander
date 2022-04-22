@@ -12,15 +12,19 @@ We'll skip `/dev/gpio0` to `/dev/gpio2` because they are already used by the SX1
 
 Warning: BL602 GPIO Driver will be disabled when we enable GPIO Expander, because GPIO Expander needs GPIO Lower Half which can't coexist with BL602 GPIO Driver.
 
-TODO: Call [`bl602_configgpio`](https://github.com/lupyuen/incubator-nuttx/blob/pinedio/arch/risc-v/src/bl602/bl602_gpio.c#L58-L140), [`bl602_gpioread`](https://github.com/lupyuen/incubator-nuttx/blob/pinedio/arch/risc-v/src/bl602/bl602_gpio.c#L218-L230) and [`bl602_gpiowrite`](https://github.com/lupyuen/incubator-nuttx/blob/pinedio/arch/risc-v/src/bl602/bl602_gpio.c#L197-L216) to configure / read / write GPIOs
+Works OK with GPIO Interrupts from Touch Panel and LVGL Test App.
 
-TODO: Handle GPIO Interrupts
+TODO: Test with LoRaWAN Test App
+
+TODO: Test with Push Button
+
+TODO: Call [`bl602_configgpio`](https://github.com/lupyuen/incubator-nuttx/blob/pinedio/arch/risc-v/src/bl602/bl602_gpio.c#L58-L140), [`bl602_gpioread`](https://github.com/lupyuen/incubator-nuttx/blob/pinedio/arch/risc-v/src/bl602/bl602_gpio.c#L218-L230) and [`bl602_gpiowrite`](https://github.com/lupyuen/incubator-nuttx/blob/pinedio/arch/risc-v/src/bl602/bl602_gpio.c#L197-L216) to configure / read / write GPIOs
 
 TODO: GPIO Expander will enforce checks at runtime to be sure that NuttX Apps don't tamper with the GPIOs used by SPI, I2C and UART
 
 TODO: GPIO Expander will check that the SPI / I2C / UART Pins are correctly defined (e.g. MISO vs MOSI) and are not reused
 
-TODO: Eventually SX1262 Library will access `/dev/gpio10`, `/dev/gpio15`, `/dev/gpio19` instead of `dev/gpio0`, `/dev/gpio1`, `/dev/gpio2`
+TODO: Eventually SX1262 Library will be configured to access `/dev/gpio10`, `/dev/gpio15`, `/dev/gpio19` instead of `dev/gpio0`, `/dev/gpio1`, `/dev/gpio2`
 
 # Install Driver
 
@@ -87,7 +91,7 @@ nuttx/boards/xtensa/esp32/esp32-devkitc/src/esp32_bringup.c
 
 And call `bl602_expander_initialize` to initialise our driver, just after `bl602_gpio_initialize`:
 
-https://github.com/lupyuen/incubator-nuttx/blob/expander/boards/risc-v/bl602/bl602evb/src/bl602_bringup.c#L643-L699
+https://github.com/lupyuen/incubator-nuttx/blob/expander/boards/risc-v/bl602/bl602evb/src/bl602_bringup.c#L644-L725
 
 ```c
 #ifdef CONFIG_IOEXPANDER_BL602_EXPANDER
@@ -123,16 +127,16 @@ int bl602_bringup(void) {
 
   /* Register pin drivers */
 
-  /* GPIO 9: a non-inverted, falling-edge interrupting pin */
+  /* Touch Panel GPIO 9: a non-inverted, falling-edge interrupting pin */
   {
     gpio_pinset_t pinset = BOARD_TOUCH_INT;
     uint8_t gpio_pin = (pinset & GPIO_PIN_MASK) >> GPIO_PIN_SHIFT;
 
-    IOEXP_SETDIRECTION(bl602_expander, gpio_pin, IOEXPANDER_DIRECTION_IN);
-    IOEXP_SETOPTION(bl602_expander, gpio_pin, IOEXPANDER_OPTION_INVERT,
-                    (FAR void *)IOEXPANDER_VAL_NORMAL);
-    IOEXP_SETOPTION(bl602_expander, gpio_pin, IOEXPANDER_OPTION_INTCFG,
-                    (FAR void *)IOEXPANDER_VAL_FALLING);
+    #warning TODO: Move bl602_configgpio to GPIO Expander
+    ret = bl602_configgpio(pinset);
+    DEBUGASSERT(ret == OK);
+
+    #warning TODO: Move gpio_lower_half to GPIO Expander
     gpio_lower_half(bl602_expander, gpio_pin, GPIO_INTERRUPT_PIN, gpio_pin);
   }
 
@@ -195,12 +199,6 @@ https://github.com/lupyuen/incubator-nuttx/blob/expander/boards/risc-v/bl602/bl6
 ```c
 #if defined(CONFIG_DEV_GPIO) && !defined(CONFIG_GPIO_LOWER_HALF)
 ```
-
-Works OK with LVGL Test App.
-
-TODO: Test with LoRaWAN Test App
-
-TODO: Test with Push Button
 
 # Output Log
 
