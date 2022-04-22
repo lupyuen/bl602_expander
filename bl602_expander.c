@@ -288,47 +288,6 @@ static void bl602_expander_intclear(uint8_t gpio_pin, uint8_t int_clear)
 }
 
 /****************************************************************************
- * Name: bl602_expander_irq_attach
- *
- * Description:
- *   Attach Interrupt Handler to GPIO Interrupt.
- *   Based on https://github.com/lupyuen/incubator-nuttx/blob/touch/boards/risc-v/bl602/bl602evb/src/bl602_gpio.c#L477-L505 
- *
- ****************************************************************************/
-
-static int NOTUSED_bl602_expander_irq_attach(gpio_pinset_t pinset, FAR isr_handler *callback, FAR void *arg)
-{
-  int ret = 0;
-  uint8_t gpio_pin = (pinset & GPIO_PIN_MASK) >> GPIO_PIN_SHIFT;
-  ////FAR struct bl602_gpint_dev_s *dev = NULL;
-
-  DEBUGASSERT(callback != NULL);
-
-  /* Configure the pin that will be used as interrupt input */
-
-  ////bl602_expander_set_intmod(gpio_pin, 1, GLB_GPIO_INT_TRIG_NEG_PULSE);
-
-  #warning TODO: bl602_configgpio
-  ret = bl602_configgpio(pinset);
-  if (ret < 0)
-    {
-      gpioerr("Failed to configure GPIO pin %d\n", gpio_pin);
-      return ret;
-    }
-
-  /* Make sure the interrupt is disabled */
-
-  ////bl602_expander_intmask(gpio_pin, 1);
-
-  ////irq_attach(BL602_IRQ_GPIO_INT0, bl602_expander_interrupt, dev);
-  ////bl602_expander_intmask(gpio_pin, 0);
-
-  gpioinfo("Attach %p\n", callback);
-
-  return 0;
-}
-
-/****************************************************************************
  * Name: bl602_expander_irq_enable
  *
  * Description:
@@ -464,8 +423,9 @@ static int bl602_expander_direction(FAR struct ioexpander_dev_s *dev, uint8_t pi
       return -EINVAL;
     }
 
-  gpioinfo("TODO: pin=%u, direction=%s\n",
+  gpioerr("ERROR: Unsupported pin=%u, direction=%s\n",
            pin, (direction == IOEXPANDER_DIRECTION_IN) ? "IN" : "OUT");
+  DEBUGPANIC();
 
   DEBUGASSERT(priv != NULL && pin < CONFIG_IOEXPANDER_NPINS);
 
@@ -477,8 +437,9 @@ static int bl602_expander_direction(FAR struct ioexpander_dev_s *dev, uint8_t pi
       return ret;
     }
 
-  /* Set the pin direction in the I/O Expander */
-#warning TODO: bl602_expander_direction
+  /* TODO: Set the pin direction in the I/O Expander */
+
+  /* Unlock the I/O Expander */
 
   bl602_expander_unlock(priv);
   return ret;
@@ -566,7 +527,7 @@ static int bl602_expander_option(FAR struct ioexpander_dev_s *dev, uint8_t pin,
         }
     }
 
-  /* Unlock I/O Expander */
+  /* Unlock the I/O Expander */
 
   bl602_expander_unlock(priv);
   return ret;
@@ -589,13 +550,14 @@ static int bl602_expander_option(FAR struct ioexpander_dev_s *dev, uint8_t pin,
  *
  ****************************************************************************/
 
-static int bl602_expander_writepin(FAR struct ioexpander_dev_s *dev, uint8_t pin,
-                         bool value)
+static int bl602_expander_writepin(FAR struct ioexpander_dev_s *dev,
+                                   uint8_t pin,
+                                   bool value)
 {
   FAR struct bl602_expander_dev_s *priv = (FAR struct bl602_expander_dev_s *)dev;
   int ret;
 
-  gpioinfo("TODO: pin=%u, value=%u\n", pin, value);
+  gpioinfo("pin=%u, value=%u\n", pin, value);
 
   DEBUGASSERT(priv != NULL && pin < CONFIG_IOEXPANDER_NPINS);
 
@@ -607,8 +569,11 @@ static int bl602_expander_writepin(FAR struct ioexpander_dev_s *dev, uint8_t pin
       return ret;
     }
 
-  /* Write the pin value */
-#warning TODO: bl602_expander_writepin
+  /* Write the pin value. Warning: Pin Number passed as BL602 Pinset */
+
+  bl602_gpiowrite(pin << GPIO_PIN_SHIFT, value);
+
+  /* Unlock the I/O Expander */
 
   bl602_expander_unlock(priv);
   return ret;
@@ -633,13 +598,12 @@ static int bl602_expander_writepin(FAR struct ioexpander_dev_s *dev, uint8_t pin
  *
  ****************************************************************************/
 
-static int bl602_expander_readpin(FAR struct ioexpander_dev_s *dev, uint8_t pin,
-                        FAR bool *value)
+static int bl602_expander_readpin(FAR struct ioexpander_dev_s *dev, 
+                                  uint8_t pin,
+                                  FAR bool *value)
 {
   FAR struct bl602_expander_dev_s *priv = (FAR struct bl602_expander_dev_s *)dev;
   int ret;
-
-  gpioinfo("TODO: pin=%u\n", pin);
 
   DEBUGASSERT(priv != NULL && pin < CONFIG_IOEXPANDER_NPINS &&
               value != NULL);
@@ -652,12 +616,14 @@ static int bl602_expander_readpin(FAR struct ioexpander_dev_s *dev, uint8_t pin,
       return ret;
     }
 
-  /* Read the pin value */
-#warning TODO: bl602_expander_readpin
+  /* Read the pin value. Warning: Pin Number passed as BL602 Pinset */
 
-  /* Return the pin value via the value pointer */
+  *value = bl602_gpioread(pin << GPIO_PIN_SHIFT);
+
+  /* Unlock the I/O Expander */
 
   bl602_expander_unlock(priv);
+  gpioinfo("pin=%u, value=%u\n", pin, *value);
   return ret;
 }
 
@@ -678,11 +644,15 @@ static int bl602_expander_readpin(FAR struct ioexpander_dev_s *dev, uint8_t pin,
  *
  ****************************************************************************/
 
-static int bl602_expander_readbuf(FAR struct ioexpander_dev_s *dev, uint8_t pin,
-                        FAR bool *value)
+static int bl602_expander_readbuf(FAR struct ioexpander_dev_s *dev, 
+                                  uint8_t pin,
+                                  FAR bool *value)
 {
   FAR struct bl602_expander_dev_s *priv = (FAR struct bl602_expander_dev_s *)dev;
   int ret;
+
+  gpioerr("ERROR: Not supported\n");
+  DEBUGPANIC();
 
   /* Get exclusive access to the I/O Expander */
 
@@ -692,8 +662,9 @@ static int bl602_expander_readbuf(FAR struct ioexpander_dev_s *dev, uint8_t pin,
       return ret;
     }
 
-  /* Read the buffered pin level */
-#warning TODO: bl602_expander_readbuf
+  /* TODO: Read the buffered pin level */
+
+  /* Unlock the I/O Expander */
 
   bl602_expander_unlock(priv);
   return ret;
