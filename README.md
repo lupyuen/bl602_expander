@@ -28,13 +28,20 @@ Warning: BL602 GPIO Driver will be disabled when we enable GPIO Expander, becaus
 
 - Calls [`bl602_configgpio`](https://github.com/lupyuen/incubator-nuttx/blob/pinedio/arch/risc-v/src/bl602/bl602_gpio.c#L58-L140), [`bl602_gpioread`](https://github.com/lupyuen/incubator-nuttx/blob/pinedio/arch/risc-v/src/bl602/bl602_gpio.c#L218-L230) and [`bl602_gpiowrite`](https://github.com/lupyuen/incubator-nuttx/blob/pinedio/arch/risc-v/src/bl602/bl602_gpio.c#L197-L216) to configure / read / write GPIOs
 
+- SX1262 Library is now configured by Kconfig to access `/dev/gpio10`, `/dev/gpio15`, `/dev/gpio19` (instead of `dev/gpio0`, `/dev/gpio1`, `/dev/gpio2`). 
+
+  In menuconfig: Library Routines → Semtech SX1262 Library
+
+  - SPI Test device path  
+  - Chip Select device path 
+  - Busy device path
+  - DIO1 device path           
+
 __TODO__: Test with LoRaWAN Test App
 
 __TODO__: GPIO Expander will enforce checks at runtime to be sure that NuttX Apps don't tamper with the GPIOs used by SPI, I2C and UART
 
 __TODO__: GPIO Expander will check that the SPI / I2C / UART Pins are correctly defined (e.g. MISO vs MOSI) and are not reused
-
-__TODO__: Eventually SX1262 Library will be configured by Kconfig to access `/dev/gpio10`, `/dev/gpio15`, `/dev/gpio19` (instead of `dev/gpio0`, `/dev/gpio1`, `/dev/gpio2`)
 
 # Install Driver
 
