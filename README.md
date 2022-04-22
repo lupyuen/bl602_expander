@@ -12,19 +12,29 @@ We'll skip `/dev/gpio0` to `/dev/gpio2` because they are already used by the SX1
 
 Warning: BL602 GPIO Driver will be disabled when we enable GPIO Expander, because GPIO Expander needs GPIO Lower Half which can't coexist with BL602 GPIO Driver.
 
-Works OK with GPIO Interrupts from Touch Panel and LVGL Test App.
+# Status
 
-Works OK with Push Button
+- Works OK with GPIO Interrupts from Touch Panel and LVGL Test App
 
-TODO: Test with LoRaWAN Test App
+  (With `IOEP_ATTACH` in `cst816s_register`)
 
-TODO: Call [`bl602_configgpio`](https://github.com/lupyuen/incubator-nuttx/blob/pinedio/arch/risc-v/src/bl602/bl602_gpio.c#L58-L140), [`bl602_gpioread`](https://github.com/lupyuen/incubator-nuttx/blob/pinedio/arch/risc-v/src/bl602/bl602_gpio.c#L218-L230) and [`bl602_gpiowrite`](https://github.com/lupyuen/incubator-nuttx/blob/pinedio/arch/risc-v/src/bl602/bl602_gpio.c#L197-L216) to configure / read / write GPIOs
+- Works OK with Push Button
 
-TODO: GPIO Expander will enforce checks at runtime to be sure that NuttX Apps don't tamper with the GPIOs used by SPI, I2C and UART
+  (With `IOEP_ATTACH` in `bl602_bringup`)
 
-TODO: GPIO Expander will check that the SPI / I2C / UART Pins are correctly defined (e.g. MISO vs MOSI) and are not reused
+- Works OK with Push Button GPIO Command: `gpio -t 8 -w 1 /dev/gpio12`
 
-TODO: Eventually SX1262 Library will be configured to access `/dev/gpio10`, `/dev/gpio15`, `/dev/gpio19` instead of `dev/gpio0`, `/dev/gpio1`, `/dev/gpio2`
+  (Comment out `IOEP_ATTACH` in `bl602_bringup`)
+
+__TODO__: Call [`bl602_configgpio`](https://github.com/lupyuen/incubator-nuttx/blob/pinedio/arch/risc-v/src/bl602/bl602_gpio.c#L58-L140), [`bl602_gpioread`](https://github.com/lupyuen/incubator-nuttx/blob/pinedio/arch/risc-v/src/bl602/bl602_gpio.c#L218-L230) and [`bl602_gpiowrite`](https://github.com/lupyuen/incubator-nuttx/blob/pinedio/arch/risc-v/src/bl602/bl602_gpio.c#L197-L216) to configure / read / write GPIOs
+
+__TODO__: Test with LoRaWAN Test App
+
+__TODO__: GPIO Expander will enforce checks at runtime to be sure that NuttX Apps don't tamper with the GPIOs used by SPI, I2C and UART
+
+__TODO__: GPIO Expander will check that the SPI / I2C / UART Pins are correctly defined (e.g. MISO vs MOSI) and are not reused
+
+__TODO__: Eventually SX1262 Library will be configured by Kconfig to access `/dev/gpio10`, `/dev/gpio15`, `/dev/gpio19` (instead of `dev/gpio0`, `/dev/gpio1`, `/dev/gpio2`)
 
 # Install Driver
 
@@ -161,7 +171,7 @@ int bl602_bringup(void) {
 
     #warning TODO: Move IOEP_ATTACH to Button Handler
     void *handle = IOEP_ATTACH(bl602_expander,
-                               gpio_pin,
+                               (ioe_pinset_t)1 << gpio_pin,
                                button_isr_handler,
                                NULL);  ////  TODO
     DEBUGASSERT(handle != NULL);
@@ -578,4 +588,48 @@ tp_cal result
 offset x:36, y:11
 range x:180, y:207
 invert x/y:1, x:0, y:1
+```
+
+Testing Push Button with GPIO Command (comment out `IOEP_ATTACH` in `bl602_bringup`)...
+
+```text
+nsh> ls /dev
+/dev:
+ console
+ gpio12
+ gpio3
+ gpio4
+ gpio5
+ gpio6
+ gpio9
+ i2c0
+ input0
+ lcd0
+ null
+ spi0
+ spitest0
+ timer0
+ urandom
+ zero
+
+nsh> gpio -t 8 -w 1 /dev/gpio12
+Driver: /dev/gpio12
+gplh_read: pin12: value=0x4202193f
+bl602_expander_readpin: TODO: pin=12
+  Interrupt pin: Value=0
+gplh_attach: pin12: callback=0x23060920
+gplh_enable: pin12: Enabling callback=0x23060920 handle=0
+gplh_enable: pin12: Attaching 0x23060920
+bl602_expander_attach: pinset=1000, callback=0x2305f50c, arg=0x420209e0
+bl602_expander_attach: Attach callback for gpio=12, callback=0x2305f50c, arg=0x420209e0
+bl602_expander_interrupt: Interrupt! context=0x42012db8, priv=0x4201d0f0
+bl602_expander_interrupt: Call gpio=12, callback=0x2305f50c, arg=0x420209e0
+gplh_handler: pin12: pinset: c callback=0x23060920
+gplh_enable: pin12: Disabling callback=0x23060920 handle=0x4201d1a0
+gplh_enable: pin12: Detaching handle=0x4201d1a0
+bl602_expander_detach: Detach callback for gpio=12, callback=0x2305f50c, arg=0x420209e0
+gplh_attach: pin12: callback=0
+gplh_read: pin12: value=0x4202193f
+bl602_expander_readpin: TODO: pin=12
+  Verify:        Value=0
 ```

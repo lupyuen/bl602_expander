@@ -860,7 +860,7 @@ static int bl602_expander_multireadbuf(FAR struct ioexpander_dev_s *dev,
  *
  * Input Parameters:
  *   dev      - Device-specific state data
- *   gpio_pin - GPIO Pin for the callback (Only 1 pin supported, not a pinset)
+ *   pinset   - The set of pin events that will generate the callback
  *   callback - The pointer to callback function.  NULL will detach the
  *              callback. NOTE: Callback will run in the context of
  *              Interrupt Handler.
@@ -873,16 +873,15 @@ static int bl602_expander_multireadbuf(FAR struct ioexpander_dev_s *dev,
 
 #ifdef CONFIG_IOEXPANDER_INT_ENABLE
 static FAR void *bl602_expander_attach(FAR struct ioexpander_dev_s *dev,
-                       ioe_pinset_t gpio_pin,
+                       ioe_pinset_t pinset,
                        ioe_callback_t callback, FAR void *arg)
 {
   FAR struct bl602_expander_dev_s *priv = (FAR struct bl602_expander_dev_s *)dev;
-  FAR struct bl602_expander_callback_s *cb;
+  FAR struct bl602_expander_callback_s *cb = NULL;
   int ret = 0;
 
+  gpioinfo("pinset=%x, callback=%p, arg=%p\n", pinset, callback, arg);
   DEBUGASSERT(priv != NULL);
-  DEBUGASSERT(gpio_pin < CONFIG_IOEXPANDER_NPINS);
-  cb = &priv->cb[gpio_pin];
 
   /* Get exclusive access to the I/O Expander */
 
@@ -893,47 +892,57 @@ static FAR void *bl602_expander_attach(FAR struct ioexpander_dev_s *dev,
       return NULL;
     }
 
-  if (callback == NULL) /* Detach Callback */
-    {
-      /* Disable GPIO Interrupt and clear Interrupt Callback */
+  /* Handle each GPIO Pin in the pinset */
 
-      gpioinfo("Detach callback for gpio=%d, callback=%p, arg=%p\n",
-              cb->pinset, cb->cbfunc, cb->cbarg);
-      bl602_expander_intmask(gpio_pin, 1);
-      cb->pinset = 0;
-      cb->cbfunc = NULL;
-      cb->cbarg  = NULL;
-      ret = 0;
-    }
-  else if (cb->cbfunc == NULL) /* Attach Callback */
+  for (uint8_t gpio_pin = 0; gpio_pin < CONFIG_IOEXPANDER_NPINS; gpio_pin++)
     {
-      /* Set Interrupt Callback and enable GPIO Interrupt */
+      /* If GPIO Pin is set in the pinset... */
 
-      gpioinfo("Attach callback for gpio=%d, callback=%p, arg=%p\n", 
-               gpio_pin, callback, arg);
-      cb->pinset = gpio_pin;
-      cb->cbfunc = callback;
-      cb->cbarg  = arg;
-      bl602_expander_intmask(gpio_pin, 0);
-      ret = 0;
-    }
-  else /* Callback already attached */
-    {
-      gpioerr("ERROR: GPIO %d already attached\n", gpio_pin);
-      ret = -EBUSY;
+      if (pinset & ((ioe_pinset_t)1 << gpio_pin))
+        {
+          cb = &priv->cb[gpio_pin];
+
+          if (callback == NULL) /* Detach Callback */
+            {
+              /* Disable GPIO Interrupt and clear Interrupt Callback */
+
+              gpioinfo("Detach callback for gpio=%d, callback=%p, arg=%p\n",
+                      cb->pinset, cb->cbfunc, cb->cbarg);
+              bl602_expander_intmask(gpio_pin, 1);
+              cb->pinset = 0;
+              cb->cbfunc = NULL;
+              cb->cbarg  = NULL;
+              ret = 0;
+            }
+          else if (cb->cbfunc == NULL) /* Attach Callback */
+            {
+              /* Set Interrupt Callback and enable GPIO Interrupt */
+
+              gpioinfo("Attach callback for gpio=%d, callback=%p, arg=%p\n", 
+                      gpio_pin, callback, arg);
+              cb->pinset = gpio_pin;
+              cb->cbfunc = callback;
+              cb->cbarg  = arg;
+              bl602_expander_intmask(gpio_pin, 0);
+              ret = 0;
+            }
+          else /* Callback already attached */
+            {
+              gpioerr("ERROR: GPIO %d already attached\n", gpio_pin);
+              ret = -EBUSY;
+            }
+
+          /* Only 1 GPIO Pin allowed */
+
+          DEBUGASSERT(pinset == ((ioe_pinset_t)1 << gpio_pin));
+          break;
+        }
     }
 
-  /* Unlock the I/O Expander */
+  /* Unlock the I/O Expander and return the handle */
 
   bl602_expander_unlock(priv);
-  if (ret == 0)
-    {
-      return cb;
-    }
-  else
-    {
-      return NULL;
-    }
+  return (ret == 0) ? cb : NULL;
 }
 #endif
 
