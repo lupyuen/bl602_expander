@@ -253,73 +253,40 @@ static int button_isr_handler(FAR struct ioexpander_dev_s *dev,
 
 # Output Log
 
-BL602 GPIO Expander works OK with LVGL Test App and Push Button...
+BL602 GPIO Expander works OK with LVGL Test App...
 
 ```text
 bl602_expander_irq_enable: Enable interrupt
-bl602_expander_option: TODO: pin=9, option=2
+bl602_expander_option: pin=9, option=2, value=0xe
+bl602_expander_option: Unsupported interrupt both edge: pin=9
 gplh_enable: pin9: Disabling callback=0 handle=0
 gplh_enable: WARNING: pin9: Already detached
 gpio_pin_register: Registering /dev/gpio9
-bl602_expander_option: TODO: pin=9, option=2
-bl602_expander_option: TODO: pin=12, option=2
+bl602_expander_option: pin=9, option=2, value=0xa
+bl602_expander_option: Falling edge: pin=9
+bl602_expander_set_intmod: gpio_pin=9, int_ctlmod=1, int_trgmod=0
+bl602_expander_option: pin=12, option=2, value=0xe
+bl602_expander_option: Unsupported interrupt both edge: pin=12
 gplh_enable: pin12: Disabling callback=0 handle=0
 gplh_enable: WARNING: pin12: Already detached
 gpio_pin_register: Registering /dev/gpio12
-bl602_expander_option: TODO: pin=12, option=2
-bl602_expander_attach: Attach callback for gpio=12, callback=0x23057fa4, arg=0
-bl602_expander_direction: TODO: pin=3, direction=IN
-bl602_expander_option: TODO: pin=3, option=1
-bl602_expander_option: TODO: pin=3, option=2
-bl602_expander_direction: TODO: pin=3, direction=IN
-bl602_expander_option: TODO: pin=3, option=2
-gpio_pin_register: Registering /dev/gpio3
-bl602_expander_direction: TODO: pin=4, direction=OUT
-bl602_expander_option: TODO: pin=4, option=1
-bl602_expander_option: TODO: pin=4, option=2
-bl602_expander_direction: TODO: pin=4, direction=OUT
-gpio_pin_register: Registering /dev/gpio4
-bl602_expander_direction: TODO: pin=5, direction=IN
-bl602_expander_option: TODO: pin=5, option=1
-bl602_expander_option: TODO: pin=5, option=2
-bl602_expander_option: TODO: pin=5, option=2
-gplh_enable: pin5: Disabling callback=0 handle=0
-gplh_enable: WARNING pin5: Already detached
-gpio_pin_register: Registering /dev/gpio5
-bl602_expander_direction: TODO: pin=6, direction=IN
-bl602_expander_option: TODO: pin=6, option=1
-bl602_expander_option: TODO: pin=6, option=2
-bl602_expander_option: TODO: pin=6, option=2
-gplh_enable: pin6: Disabling callback=0 handle=0
-gplh_enable: WARNING: pin6: Already detached
-gpio_pin_register: Registering /dev/gpio6
+bl602_expander_option: pin=12, option=2, value=0xa
+bl602_expander_option: Falling edge: pin=12
+bl602_expander_set_intmod: gpio_pin=12, int_ctlmod=1, int_trgmod=0
 spi_test_driver_register: devpath=/dev/spitest0, spidev=0
 cst816s_register: path=/dev/input0, addr=21
-bl602_expander_attach: Attach callback for gpio=9, callback=0x2305e820, arg=0x42020dd0
+bl602_expander_attach: pinset=200, callback=0x2305e700, arg=0x42020b90
+bl602_expander_attach: Attach callback for gpio=9, callback=0x2305e700, arg=0x42020b90
 cst816s_register: Driver registered
 
 NuttShell (NSH) NuttX-10.3.0-RC0
-nsh> 
-
-bl602_expander_interrupt: Interrupt! context=0x42012db8, priv=0x4201d0f0
-bl602_expander_interrupt: Call gpio=9, callback=0x2305e820, arg=0x42020dd0
+nsh> bl602_expander_interrupt: Interrupt! context=0x42012db8, priv=0x4201d0f0
+bl602_expander_interrupt: Call gpio=9, callback=0x2305e700, arg=0x42020b90
 cst816s_poll_notify:
 
 bl602_expander_interrupt: Interrupt! context=0x42012db8, priv=0x4201d0f0
-bl602_expander_interrupt: Call gpio=9, callback=0x2305e820, arg=0x42020dd0
+bl602_expander_interrupt: Call gpio=9, callback=0x2305e700, arg=0x42020b90
 cst816s_poll_notify:
-
-bl602_expander_interrupt: Interrupt! context=0x42012db8, priv=0x4201d0f0
-bl602_expander_interrupt: Call gpio=12, callback=0x23057fa4, arg=0
-button_isr_handler: Button Pressed
-
-bl602_expander_interrupt: Interrupt! context=0x42012db8, priv=0x4201d0f0
-bl602_expander_interrupt: Cal gpio=12, callback=0x23057fa4, arg=0
-button_isr_handler: Button Pressed
-
-bl602_expander_interrupt: Interrupt! context=0x42012db8, priv=0x4201d0f0
-bl602_expander_interrupt: Call gpio=12, callback=0x23057fa4, arg=0
-button_isr_handler: Button Pressed
 
 nsh> lvgltest
 tp_init: Opening /dev/input0
@@ -328,279 +295,322 @@ cst816s_get_touch_data:
 cst816s_i2c_read:
 bl602_i2c_transfer: i2c transfer success
 bl602_i2c_transfer: i2c transfer success
-cst816s_get_touch_data: Invalid touch data: id=4, touch=2, x=622, y=3842
-cst816s_get_touch_data: Can't return touch data: id=4, touch=2, x=622, y=3842
+cst816s_get_touch_data: Invalid touch data: id=4, touch=2, x=558, y=3330
+cst816s_get_touch_data: Can't return touch data: id=4, touch=2, x=558, y=3330
 bl602_expander_interrupt: Interrupt! context=0x42012db8, priv=0x4201d0f0
-bl602_expander_interrupt: Call gpio=9, callback=0x2305e820, arg=0x42020dd0
+bl602_expander_interrupt: Call gpio=9, callback=0x2305e700, arg=0x42020b90
 cst816s_poll_notify:
 cst816s_get_touch_data:
 cst816s_i2c_read:
 bl602_i2c_transfer: i2c transfer success
 bl602_i2c_transfer: i2c transfer success
-cst816s_get_touch_data: DOWN: id=0, touch=0, x=218, y=36
+cst816s_get_touch_data: UP: id=0, touch=0, x=216, y=25
 cst816s_get_touch_data:   id:      0
-cst816s_get_touch_data:   flags:   19
-cst816s_get_touch_data:   x:       218
-cst816s_get_touch_data:   y:       36
+cst816s_get_touch_data:   flags:   1c
+cst816s_get_touch_data:   x:       216
+cst816s_get_touch_data:   y:       25
+bl602_expander_interrupt: Interrupt! context=0x42012db8, priv=0x4201d0f0
+bl602_expander_interrupt: Call gpio=9, callback=0x2305e700, arg=0x42020b90
+cst816s_poll_notify:
 cst816s_get_touch_data:
 cst816s_i2c_read:
 bl602_i2c_transfer: i2c transfer success
 bl602_i2c_transfer: i2c transfer success
-cst816s_get_touch_data: DOWN: id=0, touch=0, x=218, y=36
+cst816s_get_touch_data: DOWN: id=0, touch=0, x=215, y=19
 cst816s_get_touch_data:   id:      0
 cst816s_get_touch_data:   flags:   19
-cst816s_get_touch_data:   x:       218
-cst816s_get_touch_data:   y:       36
+cst816s_get_touch_data:   x:       215
+cst816s_get_touch_data:   y:       19
 cst816s_get_touch_data:
 cst816s_i2c_read:
 bl602_i2c_transfer: i2c transfer success
 bl602_i2c_transfer: i2c transfer success
-cst816s_get_touch_data: DOWN: id=0, touch=0, x=218, y=36
+cst816s_get_touch_data: DOWN: id=0, touch=0, x=215, y=19
 cst816s_get_touch_data:   id:      0
 cst816s_get_touch_data:   flags:   19
-cst816s_get_touch_data:   x:       218
-cst816s_get_touch_data:   y:       36
+cst816s_get_touch_data:   x:       215
+cst816s_get_touch_data:   y:       19
 cst816s_get_touch_data:
 cst816s_i2c_read:
 bl602_i2c_transfer: i2c transfer success
 bl602_i2c_transfer: i2c transfer success
-cst816s_get_touch_data: DOWN: id=0, touch=0, x=218, y=36
+cst816s_get_touch_data: DOWN: id=0, touch=0, x=215, y=19
 cst816s_get_touch_data:   id:      0
 cst816s_get_touch_data:   flags:   19
-cst816s_get_touch_data:   x:       218
-cst816s_get_touch_data:   y:       36
+cst816s_get_touch_data:   x:       215
+cst816s_get_touch_data:   y:       19
 cst816s_get_touch_data:
 cst816s_i2c_read:
 bl602_i2c_transfer: i2c transfer success
 bl602_i2c_transfer: i2c transfer success
-cst816s_get_touch_data: DOWN: id=0, touch=0, x=218, y=36
+cst816s_get_touch_data: DOWN: id=0, touch=0, x=215, y=19
 cst816s_get_touch_data:   id:      0
 cst816s_get_touch_data:   flags:   19
-cst816s_get_touch_data:   x:       218
-cst816s_get_touch_data:   y:       36
+cst816s_get_touch_data:   x:       215
+cst816s_get_touch_data:   y:       19
 cst816s_get_touch_data:
 cst816s_i2c_read:
 bl602_i2c_transfer: i2c transfer success
 bl602_i2c_transfer: i2c transfer success
-cst816s_get_touch_data: DOWN: id=0, touch=0, x=218, y=36
+cst816s_get_touch_data: DOWN: id=0, touch=0, x=215, y=19
 cst816s_get_touch_data:   id:      0
 cst816s_get_touch_data:   flags:   19
-cst816s_get_touch_data:   x:       218
-cst816s_get_touch_data:   y:       36
+cst816s_get_touch_data:   x:       215
+cst816s_get_touch_data:   y:       19
 cst816s_get_touch_data:
 cst816s_i2c_read:
 bl602_i2c_transfer: i2c transfer success
 bl602_i2c_transfer: i2c transfer success
-cst816s_get_touch_data: DOWN: id=0, touch=0, x=218, y=36
+cst816s_get_touch_data: DOWN: id=0, touch=0, x=215, y=19
 cst816s_get_touch_data:   id:      0
 cst816s_get_touch_data:   flags:   19
-cst816s_get_touch_data:   x:       218
-cst816s_get_touch_data:   y:       36
+cst816s_get_touch_data:   x:       215
+cst816s_get_touch_data:   y:       19
 cst816s_get_touch_data:
 cst816s_i2c_read:
 bl602_i2c_transfer: i2c transfer success
 bl602_i2c_transfer: i2c transfer success
-cst816s_get_touch_data: DOWN: id=0, touch=0, x=218, y=36
+cst816s_get_touch_data: DOWN: id=0, touch=0, x=215, y=19
 cst816s_get_touch_data:   id:      0
 cst816s_get_touch_data:   flags:   19
-cst816s_get_touch_data:   x:       218
-cst816s_get_touch_data:   y:       36
+cst816s_get_touch_data:   x:       215
+cst816s_get_touch_data:   y:       19
 cst816s_get_touch_data:
 cst816s_i2c_read:
 bl602_i2c_transfer: i2c transfer success
 bl602_i2c_transfer: i2c transfer success
-cst816s_get_touch_data: DOWN: id=0, touch=0, x=218, y=36
-cst816s_get_touch_data:   id:      0
+cst816s_get_touch_data: DOWN: id=0, touch=0, x=215, y=19
+cst816s_ge_touch_data:   id:      0
 cst816s_get_touch_data:   flags:   19
-cst816s_get_touch_data:   x:       218
-cst816s_get_touch_data:   y:       36
+cst816s_get_touch_data:   x:       215
+cst816s_get_touch_data:   y:       19
 cst816s_get_touch_data:
 cst816s_i2c_read:
 bl602_i2c_transfer: i2c transfer success
 bl602_i2c_transfer: i2c transfer success
-cst816s_get_touch_data: DOWN: id=0, touch=0, x=218, y=36
+cst816s_get_touch_data: DOWN: id=0, touch=0, x=215, y=19
 cst816s_get_touch_data:   id:      0
 cst816s_get_touch_data:   flags:   19
-cst816s_get_touch_data:   x:       218
-cst816s_get_touch_data   y:       36
+cst816s_get_touch_data:   x:       215
+cst816s_get_touch_data:   y:       19
 cst816s_get_touch_data:
 cst816s_i2c_read:
 bl602_i2c_transfer: i2c transfer success
 bl602_i2c_transfer: i2c transfer success
-cst816s_get_touch_data: DOWN: id=0, touch=0, x=218, y=36
+cst816s_get_touch_data: DOWN: id=0, touch=0, x=215, y=19
 cst816s_get_touch_data:   id:      0
 cst816s_get_touch_data:   flags:   19
-cst816s_get_touch_data:   x:       218
-cst816s_get_touch_data:   y:       36
+cst816s_get_touch_data:   x:       215
+cst816s_get_touch_data:   y:       19
 cst816s_get_touch_data:
 cst816s_i2c_read:
 bl602_i2c_transfer: i2c transfer success
 bl602_i2c_transfer: i2c transfer success
-cst816s_get_touch_data: DOWN: id=0, touch=0, x=218, y=36
+cst816s_get_touch_data: DOWN: id=0, touch=0, x=215, y=19
 cst816s_get_touch_data:   id:      0
 cst816s_get_touch_data:   flags:   19
-cst816s_get_touch_data:   x:       218
-cst816s_get_touch_data:   y:       36
+cst816s_get_touch_data:   x:       215
+cst816s_get_touch_data:   y:       19
 cst816s_get_touch_data:
 cst816s_i2c_read:
 bl602_i2c_transfer: i2c transfer success
 bl602_i2c_transfer: i2c transfer success
-cst816s_get_touch_data: DOWN: id=0, touch=0, x=218, y=36
+cst816s_get_touch_data: DOWN: id=0, touch=0, x=215, y=19
 cst816s_get_touch_data:   id:      0
 cst816s_get_touch_data:   flags:   19
-cst816s_get_touch_data:   x:       218
-cst816s_get_touch_data:   y:       36
+cst816s_get_touch_data:   x:       215
+cst816s_get_touch_data:   y:       19
+cst816s_get_touch_data:
+cst816s_i2c_read:
+bl602_i2c_transfer: i2c transfer success
+bl602_i2c_transfer: i2c transfer success
+cst816s_get_touch_data: DOWN: id=0, touch=0, x=215, y=19
+cst816s_get_touch_data:   id:      0
+cst816s_get_touch_data:   flags:   19
+cst816s_get_touch_data:   x:       215
+cst816s_get_touch_data:   y:       19
 cst816s_get_touch_data:
 cst816s_i2c_read:
 bl602_i2c_transfer: i2c transfer success
 bl602_i2c_transfer: i2c transfer success
 cst816s_get_touch_data: Invalid touch data: id=9, touch=2, x=639, y=1688
-cst816s_get_touch_data: UP: id=0, touch=2, x=218, y=36
+cst816s_get_touch_data: UP: id=0, touch=2, x=215, y=19
 cst816s_get_touch_data:   id:      0
 cst816s_get_touch_data:   flags:   0c
-cst816s_get_touch_data:   x:       218
-cst816s_get_touch_data:   y:       36
-bl602_expander_interrupt: Interrupt! context=0x42012db8, priv=0x4201d0f0
-bl602_expander_interrupt: Call gpio=9, callback=0x2305e820, arg=0x42020dd0
+cst816s_get_touch_data:   x:       215
+cst816s_get_touch_data:   y:       19
+bl602_expander_interrupt: Interrupt! context=0x42024b08, priv=0x4201d0f0
+bl602_expander_interrupt: Call gpio=9, callback=0x2305e700, arg=0x42020b90
 cst816s_poll_notify:
 cst816s_get_touch_data:
 cst816s_i2c_read:
 bl602_i2c_transfer: i2c transfer success
 bl602_i2c_transfer: i2c transfer success
-cst81s_get_touch_data: DOWN: id=0, touch=0, x=221, y=216
+cst816s_get_touch_data: DOWN: id=0, touch=0, x=216, y=218
 cst816s_get_touch_data:   id:      0
 cst816s_get_touch_data:   flags:   19
-cst816s_get_touch_data:   x:       221
-cst816s_get_touch_data:   y:       216
+cst816s_get_touch_data:   x:       216
+cst816s_get_touch_data:   y:       218
 cst816s_get_touch_data:
 cst816s_i2c_read:
 bl602_i2c_transfer: i2c transfer success
 bl602_i2c_transfer: i2c transfer success
-cst816s_get_touch_data: DOWN: id=0, touch=0, x=221, y=216
+cst816s_get_touch_data: DOWN: id=0, touch=0, x=216, y=218
 cst816s_get_touch_data:   id:      0
 cst816s_get_touch_data:   flags:   19
-cst816s_get_touch_data:   x:       221
-cst816s_get_touch_data:   y:       216
+cst816s_get_touch_data:   x:       216
+cst816s_get_touch_data:   y:       218
 cst816s_get_touch_data:
 cst816s_i2c_read:
 bl602_i2c_transfer: i2c transfer success
 bl602_i2c_transfer: i2c transfer success
-cst816s_get_touch_data: Invalid touch data: id=5, touch=2, x=732, y=2
-cst816s_get_touch_data: UP: id=0, touch=2, x=221, y=216
+cst816s_get_touch_data: DOWN: id=0, touch=0, x=216, y=218
+cst816s_get_touch_data:   id:      0
+cst816s_get_touch_data:   flags:   19
+cst816s_get_touch_data:   x:       216
+cst816s_get_touch_data:   y:       218
+cst816s_get_touch_data:
+cst816s_i2c_read:
+bl602_i2c_transfer: i2c transfer success
+bl602_i2c_transfer: i2c transfer success
+cst816s_get_touch_data: Invalid touch data: id=9, touch=2, x=639, y=1688
+cst816s_get_touch_data: UP: id=0, touch=2, x=216, y=218
 cst816s_get_touch_data:   id:      0
 cst816s_get_touch_data:   flags:   0c
-cst816s_get_touch_data:   x:       221
-cst816s_get_touch_data:   y:       216
+cst816s_get_touch_data:   x:       216
+cst816s_get_touch_data:   y:       218
 bl602_expander_interrupt: Interrupt! context=0x42012db8, priv=0x4201d0f0
-bl602_expander_interrupt: Call gpio=9, callback=0x2305e820, arg=0x42020dd0
+bl602_expander_interrupt: Call gpio=9, callback=0x2305e700, arg=0x42020b90
 cst816s_poll_notify:
 cst816s_get_touch_data:
 cst816s_i2c_read:
 bl602_i2c_transfer: i2c transfer success
 bl602_i2c_transfer: i2c transfer success
-cst816s_get_touch_data: DOWN: id=0, touch=0, x=19, y=202
+cst816s_get_touch_data: DOWN: id=0, touch=0, x=32, y=200
 cst816s_get_touch_data:   id:      0
 cst816s_get_touch_data:   flags:   19
-cst816s_get_touch_data:   x:       19
-cst816s_get_touch_data:   y:       202
+cst816s_get_touch_data:   x:       32
+cst816s_get_touch_data:   y:       200
 cst816s_get_touch_data:
 cst816s_i2c_read:
 bl602_i2c_transfer: i2c transfer success
 bl602_i2c_transfer: i2c transfer success
-cst816s_get_touch_data: DOWN: id=0, touch=0, x=19, y=202
+cst816s_get_touch_data: DOWN: id=0, touch=0, x=32, y=200
 cst816s_get_touch_data:   id:      0
 cst816s_get_touch_data:   flags:   19
-cst816s_get_touch_data:   x:       19
-cst816s_get_touch_data:   y:       202
+cst816s_get_touch_data:   x:       32
+cst816s_get_touch_data:   y:       200
 cst816s_get_touch_data:
 cst816s_i2c_read:
 bl602_i2c_transfer: i2c transfer success
 bl602_i2c_transfer: i2c transfer success
-cst816s_get_touch_data: Invalid touch data: id=5, touch=2, x=732, y=2
-cst816s_get_touch_data: UP: id=0, touch=2, x=19, y=202
+cst816s_get_touch_data: Invalid touch data: id=4, touch=2, x=668, y=3586
+cst816s_get_touch_data: UP: id=0, touch=2, x=32, y=200
 cst816s_get_touch_data:   id:      0
 cst816s_get_touch_data:   flags:   0c
-cst816s_get_touch_data:   x:       19
-cst816s_get_touch_data:   y:       202
+cst816s_get_touch_data:   x:       32
+cst816s_get_touch_data:   y:       200
 bl602_expander_interrupt: Interrupt! context=0x42012db8, priv=0x4201d0f0
-bl602_expander_interrupt: Call gpio=9, callback=0x2305e820, arg=0x42020dd0
+bl602_expander_interrupt: Call gpio=9, callback=0x2305e700, arg=0x42020b90
 cst816s_poll_notify:
 cst816s_get_touch_data:
 cst816s_i2c_read:
 bl602_i2c_transfer: i2c transfer success
 bl602_i2c_transfer: i2c transfer success
-cst816s_get_touch_data: DOWN: id=0, touch=0, x=11, y=25
+cst816s_get_touch_data: DOWN: id=0, touch=0, x=31, y=15
 cst816s_get_touch_data:   id:      0
 cst816s_get_touch_data:   flags:   19
-cst816s_get_touch_data:   x:       11
-cst816s_get_touch_data:   y:       25
+cst816s_get_touch_data:   x:       31
+cst816s_get_touch_data:   y:       15
+cst816s_get_touch_data:
+cst816s_i2c_rad:
+bl602_i2c_transfer: i2c transfer success
+bl602_i2c_transfer: i2c transfer success
+cst816s_get_touch_data: DOWN: id=0, touch=0, x=31, y=15
+cst816s_get_touch_data:   id:      0
+cst816s_get_touch_data:   flags:   19
+cst816s_get_touch_data:   x:       31
+cst816s_get_touch_data:   y:       15
 cst816s_get_touch_data:
 cst816s_i2c_read:
 bl602_i2c_transfer: i2c transfer success
 bl602_i2c_transfer: i2c transfer success
-cst816s_get_touch_data: DOWN: id=0, touch=0, x=11, y=25
-cst816s_get_touch_data:   id:      0
-cst816s_get_touch_data:   flags:   19
-cst816s_get_touch_data:   x:       11
-cst816s_get_touch_data:   y:       25
-cst816s_get_touch_data:
-cst816s_i2c_read:
-bl602_i2c_transfer: i2c transfer success
-bl602_i2c_transfer: i2c transfer success
-cst816s_get_touch_data: Invalid touch data: id=5, touch=2, x=732, y=2
-cst816s_get_touch_data: UP: id=0, touch=2, x=11, y=25
+cst816s_get_touch_data: Invalid touch data: id=4, touch=2, x=668, y=3586
+cst816s_get_touch_data: UP: id=0, touch=2, x=31, y=15
 cst816s_get_touch_data:   id:      0
 cst816s_get_touch_data:   flags:   0c
-cst816s_get_touch_data:   x:       11
-cst816s_get_touch_data:   y:       25
-bl602_expander_interrupt: Interrupt! context=0x42012db8, priv=0x4201d0f0
-bl602_expander_interrupt: Call gpio=9, callback=0x2305e820, arg=0x42020dd0
+cst816s_get_touch_data:   x:       31
+cst816s_get_touch_data:   y:       15
+bl602_expander_interrupt: Interrupt! context=0x420248c8, priv=0x4201d0f0
+bl602_expander_interrupt: Call gpio=9, callback=0x2305e700, arg=0x42020b90
 cst816s_poll_notify:
 cst816s_get_touch_data:
 cst816s_i2c_read:
 bl602_i2c_transfer: i2c transfer success
 bl602_i2c_transfer: i2c transfer success
-cst816s_get_touch_data: DOWN: id=0, touch=0, x=111, y=120
+cst816s_get_touch_data: DOWN: id=0, touch=0, x=119, y=116
 cst816s_get_touch_data:   id:      0
 cst816s_get_touch_data:   flags:   19
-cst816s_get_touch_data:   x:       111
-cst816s_get_touch_data:   y:       120
+cst816s_get_touch_data:   x:       119
+cst816s_get_touch_data:   y:       116
 cst816s_get_touch_data:
 cst816s_i2c_read:
 bl602_i2c_transfer: i2c transfer success
 bl602_i2c_transfer: i2c transfer success
-cst816s_get_touch_data: DOWN: id=0, touch=0, x=111, y=120
+cst816s_get_touch_data: DOWN: id=0, touch=0, x=119, y=116
 cst816s_get_touch_data:   id:      0
 cst816s_get_touch_data:   flags:   19
-cst816s_get_touch_data:   x:       111
-cst816s_get_touch_data:   y:       120
+cst816s_get_touch_data:   x:       119
+cst816s_get_touch_data:   y:       116
 cst816s_get_touch_data:
 cst816s_i2c_read:
 bl602_i2c_transfer: i2c transfer success
 bl602_i2c_transfer: i2c transfer success
-cst816s_get_touch_data: Invalid touch data: id=5, touch=2, x=732, y=2
-cst816s_get_touch_data: UP: id=0, touch=2, x=111, y=120
+cst816s_get_touch_data: Invalid touch data: id=4, touch=2, x=668, y=3586
+cst816s_get_touch_data: UP: id=0, touch=2, x=119, y=116
 cst816s_get_touch_data:   id:      0
 cst816s_get_touch_data:   flags:   0c
-cst816s_get_touch_data:   x:       111
-cst816s_get_touch_data:   y:       120
+cst816s_get_touch_data:   x:       119
+cst816s_get_touch_data:   y:       116
 tp_cal result
-offset x:36, y:11
-range x:180, y:207
+offset x:19, y:31
+range x:199, y:184
 invert x/y:1, x:0, y:1
 ```
 
 Testing Push Button with GPIO Command (comment out `IOEP_ATTACH` in `bl602_bringup`)...
 
 ```text
+nsh> gpio -t 8 -w 1 /dev/gpio12
+Driver: /dev/gpio12
+gplh_enable: pin12: Disabling callback=0 handle=0
+gplh_enable: WARNING: pin12: Already detached
+bl602_expander_option: pin=12, option=2, value=0x6
+bl602_expander_option: Rising edge: pin=12
+bl602_expander_set_intmod: gpio_pin=12, int_ctlmod=1, int_trgmod=1
+gplh_read: pin12: value=0x420216ff
+bl602_expander_readpin: TODO: pin=12
+                                      Interrupt pin: Value=0
+gplh_attach: pin12: callback=0x230609d4
+gplh_enable: pin12: Enabling callback=0x230609d4 handle=0
+gplh_enable: pin12: Attaching 0x230609d4
+bl602_expander_attach: pinset=1000, callback=0x2305f5c0, arg=0x420209e0
+bl602_expander_attach: Attach callback for gpio=12, callback=0x2305f5c0, arg=0x420209e0
+bl602_expander_interrupt: Interrupt! context=0x42012db8, priv=0x4201d0f0
+bl602_expander_interrupt: Call gpio=12, callback=0x2305f5c0, arg=0x420209e0
+gplh_handler: pin12: pinset: c callback=0x230609d4
+gplh_enable: pin12: Disabling callback=0x230609d4 handle=0x4201d1a0
+gplh_enable: pin12: Detaching handle=0x4201d1a0
+bl602_expander_detach: Detach callback for gpio=12, callback=0x2305f5c0, arg=0x420209e0
+gplh_attach: pin12: callback=0
+gplh_read: pin12: value=0x420216ff
+bl602_expander_readpin: TODO: pin=12
+  Verify:        Value=0
+
 nsh> ls /dev
 /dev:
  console
  gpio12
- gpio3
- gpio4
- gpio5
- gpio6
  gpio9
  i2c0
  input0
@@ -611,25 +621,4 @@ nsh> ls /dev
  timer0
  urandom
  zero
-
-nsh> gpio -t 8 -w 1 /dev/gpio12
-Driver: /dev/gpio12
-gplh_read: pin12: value=0x4202193f
-bl602_expander_readpin: TODO: pin=12
-  Interrupt pin: Value=0
-gplh_attach: pin12: callback=0x23060920
-gplh_enable: pin12: Enabling callback=0x23060920 handle=0
-gplh_enable: pin12: Attaching 0x23060920
-bl602_expander_attach: pinset=1000, callback=0x2305f50c, arg=0x420209e0
-bl602_expander_attach: Attach callback for gpio=12, callback=0x2305f50c, arg=0x420209e0
-bl602_expander_interrupt: Interrupt! context=0x42012db8, priv=0x4201d0f0
-bl602_expander_interrupt: Call gpio=12, callback=0x2305f50c, arg=0x420209e0
-gplh_handler: pin12: pinset: c callback=0x23060920
-gplh_enable: pin12: Disabling callback=0x23060920 handle=0x4201d1a0
-gplh_enable: pin12: Detaching handle=0x4201d1a0
-bl602_expander_detach: Detach callback for gpio=12, callback=0x2305f50c, arg=0x420209e0
-gplh_attach: pin12: callback=0
-gplh_read: pin12: value=0x4202193f
-bl602_expander_readpin: TODO: pin=12
-  Verify:        Value=0
 ```

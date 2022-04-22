@@ -306,9 +306,7 @@ static int NOTUSED_bl602_expander_irq_attach(gpio_pinset_t pinset, FAR isr_handl
 
   /* Configure the pin that will be used as interrupt input */
 
-  #warning TODO: bl602_expander_set_intmod
-  #warning TODO: Check GLB_GPIO_INT_TRIG_NEG_PULSE  ////  TODO
-  bl602_expander_set_intmod(gpio_pin, 1, GLB_GPIO_INT_TRIG_NEG_PULSE);
+  ////bl602_expander_set_intmod(gpio_pin, 1, GLB_GPIO_INT_TRIG_NEG_PULSE);
 
   #warning TODO: bl602_configgpio
   ret = bl602_configgpio(pinset);
@@ -511,28 +509,66 @@ static int bl602_expander_option(FAR struct ioexpander_dev_s *dev, uint8_t pin,
   FAR struct bl602_expander_dev_s *priv = (FAR struct bl602_expander_dev_s *)dev;
   int ret = -ENOSYS;
 
-  gpioinfo("TODO: pin=%u, option=%u\n",  pin, opt);
+  gpioinfo("pin=%u, option=%u, value=%p\n", pin, opt, value);
 
   DEBUGASSERT(priv != NULL);
 
-  /* Check for pin polarity inversion. */
+  /* Get exclusive access to the I/O Expander */
 
-  if (opt == IOEXPANDER_OPTION_INVERT)
+  ret = bl602_expander_lock(priv);
+  if (ret < 0)
     {
-      /* Get exclusive access to the I/O Expander */
-
-      ret = bl602_expander_lock(priv);
-      if (ret < 0)
-        {
-          return ret;
-        }
-
-      /* Set the pin option */
-#warning TODO: bl602_expander_option
-
-      bl602_expander_unlock(priv);
+      return ret;
     }
 
+  /* Handle each option */
+
+  switch(opt)
+    {
+      case IOEXPANDER_OPTION_INTCFG: /* Interrupt Trigger */
+        {
+          switch((uint32_t)value)
+            {
+              case IOEXPANDER_VAL_RISING: /* Rising Edge */
+                {
+                  gpioinfo("Rising edge: pin=%u\n", pin);
+                  bl602_expander_set_intmod(pin, 1, GLB_GPIO_INT_TRIG_POS_PULSE);
+                  break;
+                }
+
+              case IOEXPANDER_VAL_FALLING: /* Falling Edge */
+                {
+                  gpioinfo("Falling edge: pin=%u\n", pin);
+                  bl602_expander_set_intmod(pin, 1, GLB_GPIO_INT_TRIG_NEG_PULSE);
+                  break;
+                }
+
+              case IOEXPANDER_VAL_BOTH: /* Both Edge (Unsupported) */
+                {
+                  gpiowarn("Unsupported interrupt both edge: pin=%u\n", pin);
+                  break;
+                }
+
+              default: /* Unsupported Interrupt */
+                {
+                  gpioerr("ERROR: Unsupported interrupt: %d, pin=%u\n", value, pin);
+                  ret = -EINVAL;
+                  break;
+                }
+            }
+          break;
+        }
+
+      default: /* Unsupported Option */
+        {
+          gpioerr("ERROR: Unsupported option: %d, pin=%u\n", opt, pin);
+          ret = -ENOSYS;
+        }
+    }
+
+  /* Unlock I/O Expander */
+
+  bl602_expander_unlock(priv);
   return ret;
 }
 
@@ -620,7 +656,6 @@ static int bl602_expander_readpin(FAR struct ioexpander_dev_s *dev, uint8_t pin,
 #warning TODO: bl602_expander_readpin
 
   /* Return the pin value via the value pointer */
-#warning TODO: bl602_expander_readpin
 
   bl602_expander_unlock(priv);
   return ret;
