@@ -466,7 +466,7 @@ static int bl602_expander_direction(FAR struct ioexpander_dev_s *dev, uint8_t pi
       return -EINVAL;
     }
 
-  gpioinfo("pin=%u direction=%s\n",
+  gpioinfo("TODO: pin=%u, direction=%s\n",
            pin, (direction == IOEXPANDER_DIRECTION_IN) ? "IN" : "OUT");
 
   DEBUGASSERT(priv != NULL && pin < CONFIG_IOEXPANDER_NPINS);
@@ -511,7 +511,7 @@ static int bl602_expander_option(FAR struct ioexpander_dev_s *dev, uint8_t pin,
   FAR struct bl602_expander_dev_s *priv = (FAR struct bl602_expander_dev_s *)dev;
   int ret = -ENOSYS;
 
-  ////gpioinfo("addr=%02x pin=%u option=%u\n",  priv->addr, pin, opt);
+  gpioinfo("TODO: pin=%u, option=%u\n",  pin, opt);
 
   DEBUGASSERT(priv != NULL);
 
@@ -559,7 +559,7 @@ static int bl602_expander_writepin(FAR struct ioexpander_dev_s *dev, uint8_t pin
   FAR struct bl602_expander_dev_s *priv = (FAR struct bl602_expander_dev_s *)dev;
   int ret;
 
-  gpioinfo("pin=%u value=%u\n", pin, value);
+  gpioinfo("TODO: pin=%u, value=%u\n", pin, value);
 
   DEBUGASSERT(priv != NULL && pin < CONFIG_IOEXPANDER_NPINS);
 
@@ -603,7 +603,7 @@ static int bl602_expander_readpin(FAR struct ioexpander_dev_s *dev, uint8_t pin,
   FAR struct bl602_expander_dev_s *priv = (FAR struct bl602_expander_dev_s *)dev;
   int ret;
 
-  ////gpioinfo("pin=%u\n", priv->addr);
+  gpioinfo("TODO: pin=%u\n", pin);
 
   DEBUGASSERT(priv != NULL && pin < CONFIG_IOEXPANDER_NPINS &&
               value != NULL);
