@@ -196,7 +196,15 @@ https://github.com/lupyuen/incubator-nuttx/blob/expander/boards/risc-v/bl602/bl6
 #if defined(CONFIG_DEV_GPIO) && !defined(CONFIG_GPIO_LOWER_HALF)
 ```
 
+Works OK with LVGL Test App.
+
+TODO: Test with LoRaWAN Test App
+
+TODO: Test with Push Button
+
 # Output Log
+
+Works OK with LVGL Test App...
 
 ```text
 bl602_expander_irq_enable: Enable interrupt
@@ -254,7 +262,7 @@ nsh> ls /dev
  timer0
  urandom
  zero
- 
+
 nsh> lvgltest
 tp_init: Opening /dev/input0
 cst816s_open:
