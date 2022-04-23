@@ -272,9 +272,15 @@ Which can be super confusing because "/dev/gpio0" doesn't actually map to BL602 
 
 [("/dev/gpio0" maps to BL602 GPIO Pin 10)](https://github.com/lupyuen/incubator-nuttx/blob/expander/boards/risc-v/bl602/bl602evb/include/board.h#L49-L52)
 
+[("/dev/gpio1" maps to BL602 GPIO Pin 15)](https://github.com/lupyuen/incubator-nuttx/blob/expander/boards/risc-v/bl602/bl602evb/include/board.h#L54-L58)
+
+[("/dev/gpio2" maps to BL602 GPIO Pin 19)](https://github.com/lupyuen/incubator-nuttx/blob/expander/boards/risc-v/bl602/bl602evb/include/board.h#L59-L63)
+
 What happens when we try to support 23 GPIOs on PineDio Stack BL604? Yep the GPIO Names will look really messy on NuttX.
 
 All 23 GPIOs on PineDio Stack #BL604 are wired up! Let's simplify #NuttX and name the GPIOs as "/dev/gpio0" to "/dev/gpio22".
+
+(So that "/dev/gpioN" will map to BL602 GPIO Pin N)
 
 TODO
 
