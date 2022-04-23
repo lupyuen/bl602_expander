@@ -606,24 +606,24 @@ gplh_enable: WARNING: pin12: Already detached
 bl602_expander_option: pin=12, option=2, value=0x6
 bl602_expander_option: Rising edge: pin=12
 bl602_expander_set_intmod: gpio_pin=12, int_ctlmod=1, int_trgmod=1
-gplh_read: pin12: value=0x420216ff
-bl602_expander_readpin: TODO: pin=12
-                                      Interrupt pin: Value=0
-gplh_attach: pin12: callback=0x230609d4
-gplh_enable: pin12: Enabling callback=0x230609d4 handle=0
-gplh_enable: pin12: Attaching 0x230609d4
-bl602_expander_attach: pinset=1000, callback=0x2305f5c0, arg=0x420209e0
-bl602_expander_attach: Attach callback for gpio=12, callback=0x2305f5c0, arg=0x420209e0
+gplh_read: pin12: value=0x420218af
+bl602_expander_readpin: pin=12, value=1
+  Interrupt pin: Value=1
+gplh_attach: pin12: callback=0x23060752
+gplh_enable: pin12: Enabling callback=0x23060752 handle=0
+gplh_enable: pin12: Attaching 0x23060752
+bl602_expander_attach:pinset=1000, callback=0x2305f42c, arg=0x420209e0
+bl602_expander_attach: Attach callback for gpio=12, callback=0x2305f42c, arg=0x420209e0
 bl602_expander_interrupt: Interrupt! context=0x42012db8, priv=0x4201d0f0
-bl602_expander_interrupt: Call gpio=12, callback=0x2305f5c0, arg=0x420209e0
-gplh_handler: pin12: pinset: c callback=0x230609d4
-gplh_enable: pin12: Disabling callback=0x230609d4 handle=0x4201d1a0
+bl602_expander_interrupt: Call gpio=12, callback=0x2305f42c, arg=0x420209e0
+gplh_handler: pin12: pinset: c callback=0x23060752
+gplh_enable: pin12: Disabling callback=0x23060752 handle=0x4201d1a0
 gplh_enable: pin12: Detaching handle=0x4201d1a0
-bl602_expander_detach: Detach callback for gpio=12, callback=0x2305f5c0, arg=0x420209e0
+bl602_expander_detach: Detach callback for gpio=12, callback=0x2305f42c, arg=0x420209e0
 gplh_attach: pin12: callback=0
-gplh_read: pin12: value=0x420216ff
-bl602_expander_readpin: TODO: pin=12
-  Verify:        Value=0
+gplh_read: pin12: value=0x420218af
+bl602_expander_readpin: pin=12, value=1
+  Verify:        Value=1
 ```
 
 # Test LoRaWAN
