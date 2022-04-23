@@ -155,7 +155,7 @@ static const struct ioexpander_ops_s g_bl602_expander_ops =
  *
  * Description:
  *   Set Interrupt Mask for a GPIO Pin. Based on
- *   https://github.com/lupyuen/incubator-nuttx/blob/touch/boards/risc-v/bl602/bl602evb/src/bl602_gpio.c#L143-L169
+ *   https://github.com/apache/incubator-nuttx/blob/master/boards/risc-v/bl602/bl602evb/src/bl602_gpio.c#L143-L169
  *
  ****************************************************************************/
 
@@ -189,7 +189,7 @@ static void bl602_expander_intmask(uint8_t gpio_pin, int intmask)
  *
  * Description:
  *   Set GPIO Interrupt Mode. Based on
- *   https://github.com/lupyuen/incubator-nuttx/blob/touch/boards/risc-v/bl602/bl602evb/src/bl602_gpio.c#L171-L212
+ *   https://github.com/apache/incubator-nuttx/blob/master/boards/risc-v/bl602/bl602evb/src/bl602_gpio.c#L171-L212
  *
  ****************************************************************************/
 
@@ -238,7 +238,7 @@ static void bl602_expander_set_intmod(uint8_t gpio_pin,
  *
  * Description:
  *   Get GPIO Interrupt Status. Based on
- *   https://github.com/lupyuen/incubator-nuttx/blob/touch/boards/risc-v/bl602/bl602evb/src/bl602_gpio.c#L214-L234
+ *   https://github.com/apache/incubator-nuttx/blob/master/boards/risc-v/bl602/bl602evb/src/bl602_gpio.c#L214-L234
  *
  ****************************************************************************/
 
@@ -266,7 +266,7 @@ static int bl602_expander_get_intstatus(uint8_t gpio_pin)
  *
  * Description:
  *   Clear GPIO Interrupt. Based on
- *   https://github.com/lupyuen/incubator-nuttx/blob/touch/boards/risc-v/bl602/bl602evb/src/bl602_gpio.c#L236-L254
+ *   https://github.com/apache/incubator-nuttx/blob/master/boards/risc-v/bl602/bl602evb/src/bl602_gpio.c#L236-L254
  *
  ****************************************************************************/
 
@@ -292,7 +292,7 @@ static void bl602_expander_intclear(uint8_t gpio_pin, uint8_t int_clear)
  *
  * Description:
  *   Enable or disable GPIO Interrupt.
- *   Based on https://github.com/lupyuen/incubator-nuttx/blob/touch/boards/risc-v/bl602/bl602evb/src/bl602_gpio.c#L507-L535
+ *   Based on https://github.com/apache/incubator-nuttx/blob/master/boards/risc-v/bl602/bl602evb/src/bl602_gpio.c#L507-L535
  *
  ****************************************************************************/
 
@@ -317,7 +317,7 @@ static int bl602_expander_irq_enable(bool enable)
  *
  * Description:
  *   Handle GPIO Interrupt. Based on
- *   https://github.com/lupyuen/incubator-nuttx/blob/touch/boards/risc-v/bl602/bl602evb/src/bl602_gpio.c#L256-L304
+ *   https://github.com/apache/incubator-nuttx/blob/master/boards/risc-v/bl602/bl602evb/src/bl602_gpio.c#L256-L304
  *
  ****************************************************************************/
 

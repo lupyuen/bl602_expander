@@ -145,84 +145,20 @@ int bl602_bringup(void) {
 #ifdef CONFIG_IOEXPANDER_BL602_EXPANDER
   /* Must load BL602 GPIO Expander before other drivers */
 
-  bl602_expander = bl602_expander_initialize();
+  bl602_expander = bl602_expander_initialize(
+    bl602_gpio_inputs,
+    sizeof(bl602_gpio_inputs) / sizeof(bl602_gpio_inputs[0]),
+    bl602_gpio_outputs,
+    sizeof(bl602_gpio_outputs) / sizeof(bl602_gpio_outputs[0]),
+    bl602_gpio_interrupts,
+    sizeof(bl602_gpio_interrupts) / sizeof(bl602_gpio_interrupts[0]),
+    bl602_other_pins,
+    sizeof(bl602_other_pins) / sizeof(bl602_other_pins[0]));
   if (bl602_expander == NULL)
     {
-      syslog(LOG_ERR, "Failed to initialize GPIO Expander: %d\n", ret);
+      syslog(LOG_ERR, "Failed to initialize GPIO Expander\n");
       return -ENOMEM;
     }
-
-  /* Register pin drivers */
-
-  /* Touch Panel (GPIO 9): a non-inverted, falling-edge interrupting pin */
-  {
-    gpio_pinset_t pinset = BOARD_TOUCH_INT;
-    uint8_t gpio_pin = (pinset & GPIO_PIN_MASK) >> GPIO_PIN_SHIFT;
-
-    #warning TODO: Move bl602_configgpio to GPIO Expander
-    ret = bl602_configgpio(pinset);
-    DEBUGASSERT(ret == OK);
-
-    #warning TODO: Move gpio_lower_half to GPIO Expander
-    gpio_lower_half(bl602_expander, gpio_pin, GPIO_INTERRUPT_PIN, gpio_pin);
-  }
-
-  /* Push Button (GPIO 12): a non-inverted, falling-edge interrupting pin */
-  {
-    #define BOARD_BUTTON_INT (GPIO_INPUT | GPIO_FLOAT | GPIO_FUNC_SWGPIO | GPIO_PIN12)
-    gpio_pinset_t pinset = BOARD_BUTTON_INT;
-    uint8_t gpio_pin = (pinset & GPIO_PIN_MASK) >> GPIO_PIN_SHIFT;
-
-    #warning TODO: Move bl602_configgpio to GPIO Expander
-    ret = bl602_configgpio(pinset);
-    DEBUGASSERT(ret == OK);
-
-    #warning TODO: Move gpio_lower_half to GPIO Expander
-    gpio_lower_half(bl602_expander, gpio_pin, GPIO_INTERRUPT_PIN, gpio_pin);
-  }
-
-  /* SX1262 Busy (GPIO 10): a non-inverted, input pin */
-  {
-    #define BOARD_SX1262_BUSY (GPIO_INPUT | GPIO_FLOAT | GPIO_FUNC_SWGPIO | GPIO_PIN10)
-    gpio_pinset_t pinset = BOARD_SX1262_BUSY;
-    uint8_t gpio_pin = (pinset & GPIO_PIN_MASK) >> GPIO_PIN_SHIFT;
-
-    #warning TODO: Move bl602_configgpio to GPIO Expander
-    ret = bl602_configgpio(pinset);
-    DEBUGASSERT(ret == OK);
-
-    #warning TODO: Move gpio_lower_half to GPIO Expander
-    gpio_lower_half(bl602_expander, gpio_pin, GPIO_INPUT_PIN, gpio_pin);
-  }
-
-  /* SX1262 Chip Select (GPIO 15): a non-inverted, output pin */
-  {
-    gpio_pinset_t pinset = BOARD_SX1262_CS;
-    uint8_t gpio_pin = (pinset & GPIO_PIN_MASK) >> GPIO_PIN_SHIFT;
-
-    #warning TODO: Move bl602_configgpio to GPIO Expander
-    ret = bl602_configgpio(pinset);
-    DEBUGASSERT(ret == OK);
-
-    #warning TODO: Move gpio_lower_half to GPIO Expander
-    gpio_lower_half(bl602_expander, gpio_pin, GPIO_OUTPUT_PIN, gpio_pin);
-  }
-
-  /* SX1262 Interupt (GPIO 19): a non-inverted, falling-edge interrupt */
-  {
-    gpio_pinset_t pinset = BOARD_GPIO_INT1;
-    uint8_t gpio_pin = (pinset & GPIO_PIN_MASK) >> GPIO_PIN_SHIFT;
-
-    #warning TODO: Move bl602_configgpio to GPIO Expander
-    ret = bl602_configgpio(pinset);
-    DEBUGASSERT(ret == OK);
-
-    #warning TODO: Move gpio_lower_half to GPIO Expander
-    gpio_lower_half(bl602_expander, gpio_pin, GPIO_INTERRUPT_PIN, gpio_pin);
-
-    IOEXP_SETOPTION(bl602_expander, gpio_pin, IOEXPANDER_OPTION_INTCFG,
-                    (FAR void *)IOEXPANDER_VAL_FALLING);
-  }
 #endif /* CONFIG_IOEXPANDER_BL602_EXPANDER */
 ```
 
@@ -341,7 +277,7 @@ cst816s_register: Driver registered
 NuttShell (NSH) NuttX-10.3.0-RC0
 
 nsh> uname -a
-NuttX 10.3.0-RC0 3ca8dcfb77-dirty Apr 23 2022 15:46:49 risc-v bl602evb
+NuttX 10.3.0-RC0 77c243655b-dirty Apr 23 2022 16:51:47 risc-v bl602evb
 
 nsh> ls /dev
 /dev:
@@ -631,6 +567,27 @@ BL602 GPIO Expander tested OK with Push Button and GPIO Command...
 (Comment out `IOEP_ATTACH` in `bl602_bringup`)
 
 ```text
+nsh> uname -a
+NuttX 10.3.0-RC0 77c243655b-dirty Apr 23 2022 16:51:47 risc-v bl602evb
+
+nsh> ls /dev
+/dev:
+ console
+ gpio10
+ gpio12
+ gpio15
+ gpio19
+ gpio9
+ i2c0
+ input0
+ lcd0
+ null
+ spi0
+ spitest0
+ timer0
+ urandom
+ zero
+
 nsh> gpio -t 8 -w 1 /dev/gpio12
 Driver: /dev/gpio12
 gplh_enable: pin12: Disabling callback=0 handle=0
@@ -665,19 +622,22 @@ BL602 GPIO Expander tested OK with LoRaWAN Test App...
 (With "GPIO Informational Output" logging disabled)
 
 ```text
-bl602_expander_option: Unsupported interrupt both edge: pin=9
-gplh_enable: WARNING: pin9: Already detached
-bl602_expander_option: Unsupported interrupt both edge: pin=12
-gplh_enable: WARNING: pin12: Already detached
 bl602_expander_direction: Unsupported direction: pin=10, direction=IN
 bl602_expander_option: ERROR: Unsupported interrupt: 0, pin=10
 bl602_expander_direction: Unsupported direction: pin=15, direction=OUT
+bl602_expander_option:Unsupported interrupt both edge: pin=9
+gplh_enable: WARNING: pin9: Already detached
+bl602_expander_option: Unsupported interrupt both edge: pin=12
+gplh_enable: WARNING: pin12: Already detached
 bl602_expander_option: Unsupported interrupt both edge: pin=19
 gplh_enable: WARNING: pin19: Already detached
 cst816s_register: path=/dev/input0, addr=21
 cst816s_register: Driver registered
 
 NuttShell (NSH) NuttX-10.3.0-RC0
+
+nsh> uname -a
+NuttX 10.3.0-RC0 77c243655b-dirty Apr 23 2022 16:51:47 risc-v bl602evb
 
 nsh> ls /dev
 /dev:
@@ -700,13 +660,13 @@ nsh> ls /dev
 nsh> lorawan_test
 init_entropy_pool
 offset = 2228
-temperature = 34.825230 Celsius
+temperature = 30.439829 Celsius
 offset = 2228
-temperature = 37.017929 Celsius
+temperature = 34.180317 Celsius
 offset = 2228
-temperature = 33.535404 Celsius
+temperature = 36.501999 Celsius
 offset = 2228
-temperature = 35.986069 Celsius
+temperature = 32.116600 Celsius
 
 ###### ===================================== ######
 
@@ -729,8 +689,8 @@ TODO: RtcGetCalendarTime
 TODO: SX126xReset
 init_gpio
 DIO1 pintype before=5
-init_gpio: change DIO1 to Trigger GPIO Interrupt on Rising Edge
-gplh_enable: WARNING: pin19: Already detached
+init_gpio: change DIO1 to Trigger GPIO gplh_enable: WARNING: pin19: Already detached
+Interrupt on Rising Edge
 DIO1 pintype after=8
 Starting process_dio1
 init_spi
@@ -762,20 +722,19 @@ Pin         : 00-00-00-00
 TimerInit:     0x4201c3bc
 TimerInit:     0x4201c3d8
 TimerInit:     0x4201c29c
-TODO: RtcGetCalendarTme
+TODO: RtcGetCalendarTime
 TODO: RtcBkupRead
 TODO: RtcBkupRead
 RadioSetChannel: freq=923200000
-RadioSetTxConfig: modem=1, power=13, fdev=0, bandwidth=0, datarate=10, coderate=            1, preambleLen=8, fixLen=0, crcOn=1, freqHopOn=0, hopPeriod=0, iqInverted=0, tim            eout=4000
-RadioSetTxConfig: SpreadingFactor=10, Bandwidth=4, CodingRate=1, LowDatarateOpti            mize=0, PreambleLength=8, HeaderType=0, PayloadLength=255, CrcMode=1, InvertIQ=0
+RadioSetTxConfig: modem=1, power=13, fdev=0, bandwidth=0, datarate=10, coderate=1, preambleLen=8, fixLen=0, crcOn=1, freqHopOn=0, hopPeriod=0, iqInverted=0, timeout=4000
+RadioSetTxConfig: SpreadingFactor=10, Bandwidth=4, CodingRate=1, LowDatarateOptimize=0, PreambleLength=8, HeaderType=0, PayloadLength=255, CrcMode=1, InvertIQ=0
 RadioStandby
-RadioSetModem
-SX126xSetTxParams: power=13, rampTime=7
+RaSX126xSetTxParams: power=13, rampTime=7
 SX126xSetPaConfig: paDutyCycle=4, hpMax=7, deviceSel=0, paLut=1
-SecureElementRandomNumber: 0xce9d8482
+SecureElementRandomNumber: 0xdeaedf3d
 RadioSend: size=23
-00 00 00 00 00 00 00 00 00 5b b1 7b 37 e7 5e c1 4b 82 84 46 8a 70 d4
-RadioSend: PreambleLength=8, HeaderType=0, PayloadLength=23, CrcMode=1, InvertIQ            =0
+00 00 00 00 00 00 00 00 00 5b b1 7b 37 e7 5e c1 4b 3d df f2 52 ef 97
+RadioSend: PreambleLength=8, HeaderType=0, PayloadLength=23, CrcMode=1, InvertIQ=0
 TimerStop:     0x4201b864
 TimerStart2:   0x4201b864, 4000 ms
 callout_reset: evq=0x420131a8, ev=0x4201b864
@@ -837,7 +796,7 @@ RadioIrqProcess
 DIO1 add event
 handle_event_queue: ev=0x4201b88c
 RadioOnDioIrq
-RadioIrqProcess
+RadoIrqProcess
 IRQ_PREAMBLE_DETECTED
 RadioOnDioIrq
 RadioIrqProcess
@@ -867,7 +826,7 @@ OnJoinRequest
 
 OTAA
 
-DevAddr     :  018178EC
+DevAddr     :  00FFB917
 
 
 DATA RATE   : DR_2
@@ -885,20 +844,20 @@ LmHandlerSend: Data frame
 TODO: RtcGetCalendarTime
 TODO: RtcBkupRead
 RadioSetChannel: freq=923400000
-RadioSetTxConfig: modem=1, power=13, fdev=0, bandwidth=0, datarate=9, coderate=1            , preambleLen=8, fixLen=0, crcOn=1, freqHopOn=0, hopPeriod=0, iqInverted=0, time            out=4000
-RadioSetTxConfig: SpreadingFactor=9, Bandwidth=4, CodingRate=1, LowDatarateOptim            ize=0, PreambleLength=8, HeaderType=0, PayloadLength=128, CrcMode=1, InvertIQ=0
+RadioSetTxConfig: modem=1, power=13, fdev=0, bandwidth=0, datarate=9, coderate=1, preambleLen=8, fixLen=0, crcOn=1, freqHopOn=0, hopPeriod=0, iqInverted=0, timeout=4000
+RadioSetTxConfig: SpreadingFactor=9, Bandwidth=4, CodingRate=1, LowDatarateOptimize=0, PreambleLength=8, HeaderType=0, PayloadLength=128, CrcMode=1, InvertIQ=0
 RadioStandby
 RadioSetModem
 SX126xSetTxParams: power=13, rampTime=7
 SX126xSetPaConfig: paDutyCycle=4, hpMax=7, deviceSel=0, paLut=1
 RadioSend: size=22
-40 ec 78 81 01 00 01 00 01 f4 ca 04 16 1b 85 35 fe 43 7d 93 7a 3c
-RadioSend: PreambleLength=8, HeaderType=0, PayloadLength=22, CrcMode=1, InvertIQ            =0
+40 17 b9 ff 00 00 01 00 01 13 c2 ae 9e dc cc 51 1d 12 1e 18 ef 27
+RadioSend: PreambleLength=8, HeaderType=0, PayloadLength=22, CrcMode=1, InvertIQ=0
 TimerStop:     0x4201b864
 TimerStart2:   0x4201b864, 4000 ms
 callout_reset: evq=0x420131a8, ev=0x4201b864
 
-###### =========== MCPS-Request ============ ######
+###### =========== MCP-Request ============ ######
 ######           MCPS_UNCONFIRMED            ######
 ###### ===================================== ######
 STATUS      : OK
@@ -910,7 +869,7 @@ RadioIrqProcess
 IRQ_TX_DONE
 TimerStop:     0x4201b864
 TODO: RtcGetCalendarTime
-TODO: RtcBkupRead
+TODO: RtcBkupRad
 RadioOnDioIrq
 RadioIrqProcess
 RadioSleep
@@ -1001,7 +960,7 @@ RadioSetModem
 SX126xSetTxParams: power=13, rampTime=7
 SX126xSetPaConfig: paDutyCycle=4, hpMax=7, deviceSel=0, paLut=1
 RadioSend: size=22
-40 ec 78 81 01 00 02 00 01 16 29 a6 e7 02 47 ba b6 fb cd e2 74 14
+40 17 b9 ff 00 00 02 00 01 39 dc c2 54 9c af 14 e6 8c 90 e9 2c 59
 RadioSend: PreambleLength=8, HeaderType=0, PayloadLength=22, CrcMode=1, InvertIQ=0
 TimerStop:     0x4201b864
 TimerStart2:   0x4201b864, 4000 ms
@@ -1077,333 +1036,6 @@ TX DATA     : UNCONFIRMED
 
 DATA RATE   : DR_3
 U/L FREQ    : 923400000
-TX POWER    : 0
-CHANNEL MASK: 0003
-
-TODO: EepromMcuWriteBuffer
-TODO: EepromMcuWriteBuffer
-UplinkProcess
-callout_handler: unlock
-callout_handler: evq=0x420131a8, ev=0x42015b08
-callout_handler: lock
-handle_event_queue: ev=0x42015b08
-OnTxTimerEvent: timeout in 42249 ms, event=0x42015b08
-TimerStop:     0x42015b08
-TimerSetValue: 0x42015b08, 42249 ms
-TimerStart:    0x42015b08
-TimerStop:     0x42015b08
-TimerStart2:   0x42015b08, 42249 ms
-callout_reset: evq=0x420131a8, ev=0x42015b08
-RadioOnDioIrq
-RadioIrqProcess
-UplinkProcess
-PrepareTxFrame: Transmit to LoRaWAN: Hi NuttX (9 bytes)
-PrepareTxFrame: status=0, maxSize=53, currentSize=53
-LmHandlerSend: Data frame
-TODO: RtcGetCalendarTime
-TODO: RtcBkupRead
-RadioSetChannel: freq=923200000
-RadioSetTxConfig: modem=1, power=13, fdev=0, bandwidth=0, datarate=9, coderate=1, preambleLen=8, fixLen=0, crcOn=1, freqHopOn=0, hopPeriod=0, iqInverted=0, timeout=4000
-RadioSetTxConfig: SpreadingFactor=9, Bandwidth=4, CodingRate=1, LowDatarateOptimize=0, PreambleLength=8, HeaderType=0, PayloadLength=128, CrcMode=1, InvertIQ=0
-RadioStandby
-RadioSetModem
-SX126xSetTxParams: power=13, rampTime=7
-SX126xSetPaConfig: paDutyCycle=4, hpMax=7, deviceSel=0, paLut=1
-RadioSend: size=22
-40 ec 78 81 01 00 03 00 01 ba a5 45 1e 60 15 2f 89 fc 99 28 6e 4f
-RadioSend: PreambleLength=8, HeaderType=0, PayloadLength=22, CrcMode=1, InvertIQ=0
-TimerStop:     0x4201b864
-TimerStart2:   0x4201b864, 4000 ms
-callout_reset: evq=0x420131a8, ev=0x4201b864
-
-###### =========== MCPS-Request ============ ######
-######           MCPS_UNCONFIRMED            ######
-###### ===================================== ######
-STATUS      : OK
-PrepareTxFrame: Transmit OK
-DIO1 add event
-handle_event_queue: ev=0x4201b88c
-RadioOnDioIrq
-RadioIrqProcess
-IRQ_TX_DONE
-TimerStop:     0x4201b864
-TODO: RtcGetCalendarTime
-TODO: RtcBkupRead
-RadioOnDioIrq
-RadioIrqProcess
-RadioSleep
-TimerSetValue: 0x4201c780, 980 ms
-TimerStart:    0x4201c780
-TimerStop:     0x4201c780
-TimerStart2:   0x4201c780, 980 ms
-callout_reset: evq=0x420131a8, ev=0x4201c780
-TimerSetValue: 0x4201c79c, 1988 ms
-TimerStart:    0x4201c79c
-TimerStop:     0x4201c79c
-TimerStart2:   0x4201c79c, 1988 ms
-callout_reset: evq=0x420131a8, ev=0x4201c79c
-TODO: RtcGetCalendarTime
-callout_handler: unlock
-callout_handler: evq=0x420131a8, ev=0x4201c780
-callout_handler: lock
-handle_event_queue: ev=0x4201c780
-TimerStop:     0x4201c780
-RadioStandby
-RadioSetChannel: freq=923200000
-RadioSetRxConfig
-RadioStandby
-RadioSetModem
-RadioSetRxConfig done
-RadioRx
-TimerStop:     0x4201b7d0
-TimerStart2:   0x4201b7d0, 3000 ms
-callout_reset: evq=0x420131a8, ev=0x4201b7d0
-RadioOnDioIrq
-RadioIrqProcess
-DIO1 add event
-handle_event_queue: ev=0x4201b88c
-RadioOnDioIrq
-RadioIrqProcess
-IRQ_RX_TX_TIMEOUT
-TimerStop:     0x4201b7d0
-RadioOnDioIrq
-RadioIrqProcess
-RadioSleep
-TimerStop:     0x4201c79c
-TimerStop:     0x4201c764
-OnTxData
-
-###### =========== MCPS-Confirm ============ ######
-STATUS      : OK
-
-###### =====   UPLINK FRAME        3   ===== ######
-
-CLASS       : A
-
-TX PORT     : 1
-TX DATA     : UNCONFIRMED
-48 69 20 4E 75 74 74 58 00
-
-DATA RATE   : DR_3
-U/L FREQ    : 923200000
-TX POWER    : 0
-CHANNEL MASK: 0003
-
-TODO: EepromMcuWriteBuffer
-TODO: EepromMcuWriteBuffer
-UplinkProcess
-callout_handler: unlock
-callout_handler: evq=0x420131a8, ev=0x42015b08
-callout_handler: lock
-handle_event_queue: ev=0x42015b08
-OnTxTimerEvent: timeout in 42249 ms, event=0x42015b08
-TimerStop:     0x42015b08
-TimerSetValue: 0x42015b08, 42249 ms
-TimerStart:    0x42015b08
-TimerStop:     0x42015b08
-TimerStart2:   0x42015b08, 42249 ms
-callout_reset: evq=0x420131a8, ev=0x42015b08
-RadioOnDioIrq
-RadioIrqProcess
-UplinkProcess
-PrepareTxFrame: Transmit to LoRaWAN: Hi NuttX (9 bytes)
-PrepareTxFrame: status=0, maxSize=53, currentSize=53
-LmHandlerSend: Data frame
-TODO: RtcGetCalendarTime
-TODO: RtcBkupRead
-RadioSetChannel: freq=923400000
-RadioSetTxConfig: modem=1, power=13, fdev=0, bandwidth=0, datarate=9, coderate=1, preableLen=8, fixLen=0, crcOn=1, freqHopOn=0, hopPeriod=0, iqInverted=0, timeout=4000
-RadioSetTxConfig: SpreadingFactor=9, Bandwidth=4, CodingRate=1, LowDatarateOptimize=0, PreambleLength=8, HeaderType=0, PayloadLength=128, CrcMode=1, InvertIQ=0
-RadioStandby
-RadioSetModem
-SX126xSetTxParams: power=13, rampTime=7
-SX126xSetPaConfig: paDutyCycle=4, hpMax=7, deviceSel=0, paLut=1
-RadioSend: size=22
-40 ec 78 81 01 00 04 00 01 0f 50 b4 c9 58 d0 31 1b 4d 44 37 51 f7
-RadioSend: PreambleLength=8, HeaderType=0, PayloadLength=22, CrcMode=1, InvertIQ=0
-TimerStop:     0x4201b864
-TimerStart2:   0x4201b864, 4000 ms
-callout_reset: evq=0x420131a8, ev=0x4201b864
-
-###### =========== MCPS-Request ============ ######
-######           MCPS_UNCONFIRMED            ######
-###### ===================================== ######
-STATUS      : OK
-PrepareTxFrame: Transmit OK
-DIO1 add event
-handle_event_queue: ev=0x4201b88c
-RadioOnDioIrq
-RadioIrqProcess
-IRQ_TX_DONE
-TimerStop:     0x4201b864
-TODO: RtcGetCalendarTime
-TODO: RtcBkupRead
-RadioOnDioIrq
-RadioIrqProcess
-RadioSleep
-TimerSetValue: 0x4201c780, 980 ms
-TimerStart:    0x4201c780
-TimerStop:     0x4201c780
-TimerStart2:   0x4201c780, 980 ms
-callout_reset: evq=0x420131a8, ev=0x4201c780
-TimerSetValue: 0x4201c79c, 1988 ms
-TimerStart:    0x4201c79c
-TimerStop:     0x4201c79c
-TimerStart2:   0x4201c79c, 1988 ms
-callout_reset: evq=0x420131a8, ev=0x4201c79c
-TODO: RtcGetCalendarTime
-callout_handler: unlock
-callout_handler: evq=0x420131a8, ev=0x4201c780
-callout_handler: lock
-handle_event_queue: ev=0x4201c780
-TimerStop:     0x4201c780
-RadioStandby
-RadioSetChannel: freq=923400000
-RadioSetRxConfig
-RadioStandby
-RadioSetModem
-RadioSetRxConfig done
-RadioRx
-TimerStop:     0x4201b7d0
-TimerStart2:   0x4201b7d0, 3000 ms
-callout_reset: evq=0x420131a8, ev=0x4201b7d0
-RadioOnDioIrq
-RadioIrqProcess
-DIO1 add event
-handle_event_queue: ev=0x4201b88c
-RadioOnDioIrq
-RadioIrqProcess
-IRQ_RX_TX_TIMEOUT
-TimerStop:     0x4201b7d0
-RadioOnDioIrq
-RadioIrqProcess
-RadioSleep
-TimerStop:     0x4201c79c
-TimerStop:     0x4201c764
-OnTxData
-
-###### =========== MCPS-Confirm ============ ######
-STATUS      : OK
-
-###### =====   UPLINK FRAME        4   ===== ######
-
-CLASS       : A
-
-TX PORT     : 1
-TX DATA     : UNCONFIRMED
-48 69 20 4E 75 74 74 58 00
-
-DATA RATE   : DR_3
-U/L FREQ    : 923400000
-TX POWER    : 0
-CHANNEL MASK: 0003
-
-TODO: EepromMcuWriteBuffer
-TODO: EepromMcuWriteBuffer
-UplinkProcess
-callout_handler: unlock
-callout_handler: evq=0x420131a8, ev=0x42015b08
-callout_handler: lock
-handle_event_queue: ev=0x42015b08
-OnTxTimerEvent: timeout in 42249 ms, event=0x42015b08
-TimerStop:     0x42015b08
-TimerSetValue: 0x42015b08, 42249 ms
-TimerStart:    0x42015b08
-TimerStop:     0x42015b08
-TimerStart2:   0x42015b08, 42249 ms
-callout_reset: evq=0x420131a8, ev=0x42015b08
-RadioOnDioIrq
-RadioIrqProcess
-UplinkProcess
-PrepareTxFrame: Transmit to LoRaWAN: Hi NuttX (9 bytes)
-PrepareTxFrame: status=0, maxSize=53, currentSize=53
-LmHandlerSend: Data frame
-TODO: RtcGetCalendarTime
-TODO: RtcBkupRead
-RadioSetChannel: freq=923200000
-RadioSetTxConfig: modem=1, power=13, fdev=0, bandwidth=0, datarate=9, coderate=1, preambleLen=8, fixLen=0, crcOn=1, freqHopOn=0, hopPeriod=0, iqInverted=0, timeout=4000
-RadioSetTxConfig: SpreadingFactor=9, Bandwidth=4, CodingRate=1, LowDatarateOptimize=0, PreambleLength=8, HeaderType=0, PayloadLength=128, CrcMode=1, InvertIQ=0
-RadioStandby
-RadioSetModem
-SX126xSetTxParams: power=13, rampTime=7
-SX126xSetPaConfig: paDutyCycle=4, hpMax=7, deviceSel=0, paLut=1
-RadioSend: size=22
-40 ec 78 81 01 00 05 00 01 00 c2 cb 38 37 48 ae 23 9e 35 9e c7 ed
-RadioSend: PreambleLength=8, HeaderType=0, PayloadLength=22, CrcMode=1, InvertIQ=0
-TimerStop:     0x4201b864
-TimerStart2:   0x4201b864, 4000 ms
-callout_reset: evq=0x420131a8, ev=0x4201b864
-
-###### =========== MCPS-Request ============ ######
-######           MCPS_UNCONFIRMED            ######
-###### ===================================== ######
-STATUS      : OK
-PrepareTxFrame: Transmit OK
-DIO1 add event
-handle_event_queue: ev=0x4201b88c
-RadioOnDioIrq
-RadioIrqProcess
-IRQ_TX_DONE
-TimerStop:     0x4201b864
-TODO: RtcGetCalendarTime
-TODO: RtcBkupRead
-RadioOnDioIrq
-RadioIrqProcess
-RadioSleep
-TimerSetValue: 0x4201c780, 980 ms
-TimerStart:    0x4201c780
-TimerStop:     0x4201c780
-TimerStart2:   0x4201c780, 980 ms
-callout_reset: evq=0x420131a8, ev=0x4201c780
-TimerSetValue: 0x4201c79c, 1988 ms
-TimerStart:    0x4201c79c
-TimerStop:     0x4201c79c
-TimerStart2:   0x4201c79c, 1988 ms
-callout_reset: evq=0x420131a8, ev=0x4201c79c
-TODO: RtcGetCalendarTime
-callout_handler: unlock
-callout_handler: evq=0x420131a8, ev=0x4201c780
-callout_handler: lock
-handle_event_queue: ev=0x4201c780
-TimerStop:     0x4201c780
-RadioStandby
-RadioSetChannel: freq=923200000
-RadioSetRxConfig
-RadioStandby
-RadioSetModem
-RadioSetRxConfig done
-RadioRx
-TimerStop:     0x4201b7d0
-TimerStart2:   0x4201b7d0, 3000 ms
-callout_reset: evq=0x420131a8, ev=0x4201b7d0
-RadioOnDioIrq
-RadioIrqProcess
-DIO1 add event
-handle_event_queue: ev=0x4201b88c
-RadioOnDioIrq
-RadioIrqProcess
-IRQ_RX_TX_TIMEOUT
-TimerStop:     0x4201b7d0
-RadioOnDioIrq
-RadioIrqProcess
-RadioSleep
-TimerStop:     0x4201c79c
-TimerStop:     0x4201c764
-OnTxData
-
-###### =========== MCPS-Confirm ============ ######
-STATUS      : OK
-
-###### =====   UPLINK FRAME        5   ===== ######
-
-CLASS       : A
-
-TX PORT     : 1
-TX DATA     : UNCONFIRMED
-48 69 20 4E 75 74 74 58 00
-
-DATA RATE   : DR_3
-U/L FREQ    : 923200000
 TX POWER    : 0
 CHANNEL MASK: 0003
 
