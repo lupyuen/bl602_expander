@@ -16,6 +16,10 @@ Warning: [BL602 EVB GPIO Driver](https://github.com/lupyuen/incubator-nuttx/blob
 
 (Because GPIO Expander needs GPIO Lower Half which conflicts with BL602 EVB GPIO Driver)
 
+Robert Lipe has an excellent article that explains the current limitations of the BL602 EVB GPIO Driver (and why we need the GPIO Expander)...
+
+-   ["Buttons on BL602 NuttX"](https://www.robertlipe.com/buttons-on-bl602-nuttx/)
+
 # Status
 
 -   Tested OK with GPIO Interrupts from Touch Panel and LVGL Test App `lvgltest`
@@ -278,7 +282,7 @@ Which can be super confusing because "/dev/gpio0" doesn't actually map to BL602 
 
 What happens when we try to support 23 GPIOs on PineDio Stack BL604? Yep the GPIO Names will look really messy on NuttX.
 
-All 23 GPIOs on PineDio Stack #BL604 are wired up! Let's simplify #NuttX and name the GPIOs as "/dev/gpio0" to "/dev/gpio22".
+All 23 GPIOs on PineDio Stack #BL604 are wired up! Let's simplify NuttX and name the GPIOs as "/dev/gpio0" to "/dev/gpio22".
 
 (So that "/dev/gpioN" will map to BL602 GPIO Pin N)
 
