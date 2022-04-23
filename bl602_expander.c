@@ -423,10 +423,8 @@ static int bl602_expander_direction(FAR struct ioexpander_dev_s *dev, uint8_t pi
       return -EINVAL;
     }
 
-  gpioerr("ERROR: Unsupported pin=%u, direction=%s\n",
+  gpiowarn("Unsupported direction: pin=%u, direction=%s\n",
            pin, (direction == IOEXPANDER_DIRECTION_IN) ? "IN" : "OUT");
-  DEBUGPANIC();
-
   DEBUGASSERT(priv != NULL && pin < CONFIG_IOEXPANDER_NPINS);
 
   /* Get exclusive access to the I/O Expander */
