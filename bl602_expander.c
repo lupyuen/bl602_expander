@@ -1183,6 +1183,7 @@ FAR struct ioexpander_dev_s *bl602_expander_initialize(
       gpio_pinset_t pinset = gpio_inputs[i];
       uint8_t gpio_pin = (pinset & GPIO_PIN_MASK) >> GPIO_PIN_SHIFT;
 
+      DEBUGASSERT(gpio_pin < CONFIG_IOEXPANDER_NPINS);
       ret = bl602_configgpio(pinset);
       DEBUGASSERT(ret == OK);
       gpio_lower_half(&priv->dev, gpio_pin, GPIO_INPUT_PIN, gpio_pin);
@@ -1195,6 +1196,7 @@ FAR struct ioexpander_dev_s *bl602_expander_initialize(
       gpio_pinset_t pinset = gpio_outputs[i];
       uint8_t gpio_pin = (pinset & GPIO_PIN_MASK) >> GPIO_PIN_SHIFT;
 
+      DEBUGASSERT(gpio_pin < CONFIG_IOEXPANDER_NPINS);
       ret = bl602_configgpio(pinset);
       DEBUGASSERT(ret == OK);
       gpio_lower_half(&priv->dev, gpio_pin, GPIO_OUTPUT_PIN, gpio_pin);
@@ -1207,12 +1209,21 @@ FAR struct ioexpander_dev_s *bl602_expander_initialize(
       gpio_pinset_t pinset = gpio_interrupts[i];
       uint8_t gpio_pin = (pinset & GPIO_PIN_MASK) >> GPIO_PIN_SHIFT;
 
+      DEBUGASSERT(gpio_pin < CONFIG_IOEXPANDER_NPINS);
       ret = bl602_configgpio(pinset);
       DEBUGASSERT(ret == OK);
       gpio_lower_half(&priv->dev, gpio_pin, GPIO_INTERRUPT_PIN, gpio_pin);
     }
 
   /* TODO: Validate the other pins (I2C, SPI, etc) */
+
+  for (i = 0; i < other_pin_count; i++)
+    {
+      gpio_pinset_t pinset = other_pins[i];
+      uint8_t gpio_pin = (pinset & GPIO_PIN_MASK) >> GPIO_PIN_SHIFT;
+
+      DEBUGASSERT(gpio_pin < CONFIG_IOEXPANDER_NPINS);
+    }
 
   return &priv->dev;
 }
