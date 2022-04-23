@@ -179,26 +179,25 @@ We need to disable BL602 GPIO Driver when we enable GPIO Expander, because GPIO 
 To handle the GPIO Interrupt that's triggered when we press the Push Button...
 
 ```c
-    #define BOARD_BUTTON_INT (GPIO_INPUT | GPIO_FLOAT | GPIO_FUNC_SWGPIO | GPIO_PIN12)
-    gpio_pinset_t pinset = BOARD_BUTTON_INT;
-    uint8_t gpio_pin = (pinset & GPIO_PIN_MASK) >> GPIO_PIN_SHIFT;
+gpio_pinset_t pinset = BOARD_BUTTON_INT;
+uint8_t gpio_pin = (pinset & GPIO_PIN_MASK) >> GPIO_PIN_SHIFT;
 
-    /* Configure GPIO interrupt to be triggered on falling edge. */
+/* Configure GPIO interrupt to be triggered on falling edge. */
 
-    DEBUGASSERT(bl602_expander != NULL);
-    IOEXP_SETOPTION(bl602_expander, gpio_pin, IOEXPANDER_OPTION_INTCFG,
-                    (FAR void *)IOEXPANDER_VAL_FALLING);
+DEBUGASSERT(bl602_expander != NULL);
+IOEXP_SETOPTION(bl602_expander, gpio_pin, IOEXPANDER_OPTION_INTCFG,
+                (FAR void *)IOEXPANDER_VAL_FALLING);
 
-    /* Attach GPIO interrupt handler. */
+/* Attach GPIO interrupt handler. */
 
-    void *handle = IOEP_ATTACH(bl602_expander,
-                               (ioe_pinset_t)1 << gpio_pin,
-                               button_isr_handler,
-                               NULL);  //  TODO: Set the callback argument
-    DEBUGASSERT(handle != NULL);
+void *handle = IOEP_ATTACH(bl602_expander,
+                           (ioe_pinset_t)1 << gpio_pin,
+                           button_isr_handler,
+                           NULL);  //  TODO: Set the callback argument
+DEBUGASSERT(handle != NULL);
 ```c
 
-[(Source)](https://github.com/lupyuen/incubator-nuttx/blob/expander/boards/risc-v/bl602/bl602evb/src/bl602_bringup.c#L680-L703)
+[(Source)](https://github.com/lupyuen/incubator-nuttx/blob/2982b3a99057c5935ca9150b9f0f1da3565c6061/boards/risc-v/bl602/bl602evb/src/bl602_bringup.c#L696-L704)
 
 `button_isr_handler` is defined as...
 
@@ -212,7 +211,7 @@ static int button_isr_handler(FAR struct ioexpander_dev_s *dev,
 }
 ```
 
-[(Source)](https://github.com/lupyuen/incubator-nuttx/blob/expander/boards/risc-v/bl602/bl602evb/src/bl602_bringup.c#L1038-L1044)
+[(Source)](https://github.com/lupyuen/incubator-nuttx/blob/2982b3a99057c5935ca9150b9f0f1da3565c6061/boards/risc-v/bl602/bl602evb/src/bl602_bringup.c#L1038-L1044)
 
 Here's how we created the BL602 GPIO Expander...
 
