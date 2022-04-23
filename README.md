@@ -18,36 +18,36 @@ Warning: [BL602 EVB GPIO Driver](https://github.com/lupyuen/incubator-nuttx/blob
 
 # Status
 
-- Tested OK with GPIO Interrupts from Touch Panel and LVGL Test App `lvgltest`
+-   Tested OK with GPIO Interrupts from Touch Panel and LVGL Test App `lvgltest`
 
-  (With `IOEP_ATTACH` in `cst816s_register`)
+    (With `IOEP_ATTACH` in `cst816s_register`)
 
-- Tested OK with Push Button
+-   Tested OK with Push Button
 
-  (With `IOEP_ATTACH` in `bl602_bringup`)
+    (With `IOEP_ATTACH` in `bl602_bringup`)
 
-- Tested OK with Push Button GPIO Command: `gpio -t 8 -w 1 /dev/gpio12`
+-   Tested OK with Push Button GPIO Command: `gpio -t 8 -w 1 /dev/gpio12`
 
-  (Comment out `IOEP_ATTACH` in `bl602_bringup`)
+    (Comment out `IOEP_ATTACH` in `bl602_bringup`)
 
-- Tested OK with LoRaWAN Test App `lorawan_test`
+-   Tested OK with LoRaWAN Test App `lorawan_test`
 
-  (With "GPIO Informational Output" logging disabled)
+    (With "GPIO Informational Output" logging disabled)
 
-- SX1262 Library is now configured by Kconfig / menuconfig to access `/dev/gpio10`, `/dev/gpio15`, `/dev/gpio19` (instead of `dev/gpio0`, `/dev/gpio1`, `/dev/gpio2`). 
+-   SX1262 Library is now configured by Kconfig / menuconfig to access `/dev/gpio10`, `/dev/gpio15`, `/dev/gpio19` (instead of `dev/gpio0`, `/dev/gpio1`, `/dev/gpio2`). 
 
-  In menuconfig: Library Routines → Semtech SX1262 Library
+    In menuconfig: Library Routines → Semtech SX1262 Library
 
-  - SPI Test device path  
-  - Chip Select device path 
-  - Busy device path
-  - DIO1 device path           
+    - SPI Test device path  
+    - Chip Select device path 
+    - Busy device path
+    - DIO1 device path           
 
-- Logging for SX1262 Library is now disabled by default and can be configured by Kconfig / menuconfig.
+-   Logging for SX1262 Library is now disabled by default and can be configured by Kconfig / menuconfig.
 
-  In menuconfig: Library Routines → Semtech SX1262 Library → Logging -> Debugging
+    In menuconfig: Library Routines → Semtech SX1262 Library → Logging -> Debugging
 
-- Logging for SPI Test Driver has been moved from "Enable Informational Debug Output" to "SPI Informational Output"
+-   Logging for SPI Test Driver has been moved from "Enable Informational Debug Output" to "SPI Informational Output"
 
 __TODO__: GPIO Expander will enforce checks at runtime to be sure that NuttX Apps don't tamper with the GPIOs used by SPI, I2C and UART
 
@@ -259,6 +259,24 @@ static int button_isr_handler(FAR struct ioexpander_dev_s *dev,
 ```
 
 [(Source)](https://github.com/lupyuen/incubator-nuttx/blob/expander/boards/risc-v/bl602/bl602evb/src/bl602_bringup.c#L1038-L1044)
+
+Here's how we created the BL602 GPIO Expander...
+
+# BL602 EVB Limitations
+
+The NuttX GPIO Driver for BL602 EVB supports one GPIO Input, one GPIO Output and one GPIO Interrupt ... And names them sequentially: "/dev/gpio0", "/dev/gpio1", "/dev/gpio2"
+
+-   [BL602 EVB GPIO Driver](https://github.com/lupyuen/incubator-nuttx/blob/expander/boards/risc-v/bl602/bl602evb/src/bl602_gpio.c#L537-L607)
+
+Which can be super confusing because "/dev/gpio0" doesn't actually map to BL602 GPIO Pin 0.
+
+[("/dev/gpio0" maps to BL602 GPIO Pin 10)](https://github.com/lupyuen/incubator-nuttx/blob/expander/boards/risc-v/bl602/bl602evb/include/board.h#L49-L52)
+
+What happens when we try to support 23 GPIOs on PineDio Stack BL604? Yep the GPIO Names will look really messy on NuttX.
+
+All 23 GPIOs on PineDio Stack #BL604 are wired up! Let's simplify #NuttX and name the GPIOs as "/dev/gpio0" to "/dev/gpio22".
+
+TODO
 
 # Test Touch Panel
 
