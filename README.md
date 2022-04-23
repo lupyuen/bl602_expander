@@ -1,20 +1,20 @@
+![GPIO Expander for BL602 / BL604 on Apache NuttX RTOS](https://lupyuen.github.io/images/expander-title.jpg)
+
 # GPIO Expander for BL602 / BL604 on Apache NuttX RTOS
 
 [(Tested on PineDio Stack BL604)](https://lupyuen.github.io/articles/pinedio2)
 
 See https://lupyuen.github.io/articles/pinedio2#gpio-expander
 
-GPIO Expander handles multiple GPIOs on BL602 / BL604 by calling [`bl602_configgpio`](https://github.com/lupyuen/incubator-nuttx/blob/pinedio/arch/risc-v/src/bl602/bl602_gpio.c#L58-L140), [`bl602_gpioread`](https://github.com/lupyuen/incubator-nuttx/blob/pinedio/arch/risc-v/src/bl602/bl602_gpio.c#L218-L230) and [`bl602_gpiowrite`](https://github.com/lupyuen/incubator-nuttx/blob/pinedio/arch/risc-v/src/bl602/bl602_gpio.c#L197-L216).
+PineDio Stack BL604 has an interesting problem on Apache NuttX RTOS... Too many GPIOs! Let's make it work.
 
 GPIO Expander exposes GPIOs 0 to 22 as `/dev/gpio0` to `/dev/gpio22`, for easier development of NuttX Apps for PineDio Stack BL604.
 
-We'll skip `/dev/gpio0` to `/dev/gpio2` because they are already used by the SX1262 Driver. [(See this)](https://lupyuen.github.io/articles/sx1262#gpio-interface)
-
-(On PineDio Stack: GPIO 0 is MISO, GPIO 1 is SDA, GPIO 2 is SCL. So we shouldn't touch GPIOs 0, 1 and 2 anyway. [See this](https://lupyuen.github.io/articles/pinedio2#appendix-gpio-assignment))
-
-Warning: BL602 EVB GPIO Driver will be disabled when we enable GPIO Expander, because GPIO Expander needs GPIO Lower Half which can't coexist with BL602 GPIO Driver.
-
 GPIO Expander calls [`bl602_configgpio`](https://github.com/lupyuen/incubator-nuttx/blob/pinedio/arch/risc-v/src/bl602/bl602_gpio.c#L58-L140), [`bl602_gpioread`](https://github.com/lupyuen/incubator-nuttx/blob/pinedio/arch/risc-v/src/bl602/bl602_gpio.c#L218-L230) and [`bl602_gpiowrite`](https://github.com/lupyuen/incubator-nuttx/blob/pinedio/arch/risc-v/src/bl602/bl602_gpio.c#L197-L216) to configure / read / write GPIOs
+
+Warning: [BL602 EVB GPIO Driver](https://github.com/lupyuen/incubator-nuttx/blob/expander/boards/risc-v/bl602/bl602evb/src/bl602_gpio.c) will be disabled when we enable GPIO Expander.
+
+(Because GPIO Expander needs GPIO Lower Half which conflicts with BL602 EVB GPIO Driver)
 
 # Status
 
@@ -106,14 +106,10 @@ Set "Number of pins" to 23.
 
 Enable "GPIO Lower Half".
 
-Edit the function `bl602_bringup` or `esp32_bringup` in this file...
+Edit the function `bl602_bringup` in this file...
 
 ```text
-## For BL602:
 nuttx/boards/risc-v/bl602/bl602evb/src/bl602_bringup.c
-
-## For ESP32: Change "esp32-devkitc" to our ESP32 board 
-nuttx/boards/xtensa/esp32/esp32-devkitc/src/esp32_bringup.c
 ```
 
 And call `bl602_expander_initialize` to initialise our driver, just after `bl602_gpio_initialize`:
@@ -154,7 +150,7 @@ int bl602_bringup(void) {
 
   /* Register pin drivers */
 
-  /* Touch Panel GPIO 9: a non-inverted, falling-edge interrupting pin */
+  /* Touch Panel (GPIO 9): a non-inverted, falling-edge interrupting pin */
   {
     gpio_pinset_t pinset = BOARD_TOUCH_INT;
     uint8_t gpio_pin = (pinset & GPIO_PIN_MASK) >> GPIO_PIN_SHIFT;
@@ -170,7 +166,7 @@ int bl602_bringup(void) {
                     (FAR void *)IOEXPANDER_VAL_FALLING);
   }
 
-  /* Push Button GPIO 12: a non-inverted, falling-edge interrupting pin */
+  /* Push Button (GPIO 12): a non-inverted, falling-edge interrupting pin */
   {
     #define BOARD_BUTTON_INT (GPIO_INPUT | GPIO_FLOAT | GPIO_FUNC_SWGPIO | GPIO_PIN12)
     gpio_pinset_t pinset = BOARD_BUTTON_INT;
@@ -187,59 +183,54 @@ int bl602_bringup(void) {
                     (FAR void *)IOEXPANDER_VAL_FALLING);
 
     #warning TODO: Move IOEP_ATTACH to Button Handler
-    void *handle = IOEP_ATTACH(bl602_expander,
-                               (ioe_pinset_t)1 << gpio_pin,
-                               button_isr_handler,
-                               NULL);  ////  TODO
-    DEBUGASSERT(handle != NULL);
+    // void *handle = IOEP_ATTACH(bl602_expander,
+    //                            (ioe_pinset_t)1 << gpio_pin,
+    //                            button_isr_handler,
+    //                            NULL);  ////  TODO
+    // DEBUGASSERT(handle != NULL);
   }
 
-  /* Testing GPIO 3: a non-inverted, input pin */
+  /* SX1262 Busy (GPIO 10): a non-inverted, input pin */
   {
-    uint8_t gpio_pin = 3;
+    #define BOARD_SX1262_BUSY (GPIO_INPUT | GPIO_FLOAT | GPIO_FUNC_SWGPIO | GPIO_PIN10)
+    gpio_pinset_t pinset = BOARD_SX1262_BUSY;
+    uint8_t gpio_pin = (pinset & GPIO_PIN_MASK) >> GPIO_PIN_SHIFT;
 
-    IOEXP_SETDIRECTION(bl602_expander, gpio_pin, IOEXPANDER_DIRECTION_IN);
-    IOEXP_SETOPTION(bl602_expander, gpio_pin, IOEXPANDER_OPTION_INVERT,
-                    (FAR void *)IOEXPANDER_VAL_NORMAL);
-    IOEXP_SETOPTION(bl602_expander, gpio_pin, IOEXPANDER_OPTION_INTCFG,
-                    (FAR void *)IOEXPANDER_VAL_DISABLE);
+    #warning TODO: Move bl602_configgpio to GPIO Expander
+    ret = bl602_configgpio(pinset);
+    DEBUGASSERT(ret == OK);
+
+    #warning TODO: Move gpio_lower_half to GPIO Expander
     gpio_lower_half(bl602_expander, gpio_pin, GPIO_INPUT_PIN, gpio_pin);
   }
 
-  /* Testing GPIO 4: a non-inverted, output pin */
+  /* SX1262 Chip Select (GPIO 15): a non-inverted, output pin */
   {
-    uint8_t gpio_pin = 4;
+    gpio_pinset_t pinset = BOARD_SX1262_CS;
+    uint8_t gpio_pin = (pinset & GPIO_PIN_MASK) >> GPIO_PIN_SHIFT;
 
-    IOEXP_SETDIRECTION(bl602_expander, gpio_pin, IOEXPANDER_DIRECTION_OUT);
-    IOEXP_SETOPTION(bl602_expander, gpio_pin, IOEXPANDER_OPTION_INVERT,
-                    (FAR void *)IOEXPANDER_VAL_NORMAL);
-    IOEXP_SETOPTION(bl602_expander, gpio_pin, IOEXPANDER_OPTION_INTCFG,
-                    (FAR void *)IOEXPANDER_VAL_DISABLE);
+    #warning TODO: Move bl602_configgpio to GPIO Expander
+    ret = bl602_configgpio(pinset);
+    DEBUGASSERT(ret == OK);
+
+    #warning TODO: Move gpio_lower_half to GPIO Expander
     gpio_lower_half(bl602_expander, gpio_pin, GPIO_OUTPUT_PIN, gpio_pin);
   }
 
-  /* Testing GPIO 5: a non-inverted, edge interrupting pin */
+  /* SX1262 Interupt (GPIO 19): a non-inverted, falling-edge interrupt */
   {
-    uint8_t gpio_pin = 5;
+    gpio_pinset_t pinset = BOARD_GPIO_INT1;
+    uint8_t gpio_pin = (pinset & GPIO_PIN_MASK) >> GPIO_PIN_SHIFT;
 
-    IOEXP_SETDIRECTION(bl602_expander, gpio_pin, IOEXPANDER_DIRECTION_IN);
-    IOEXP_SETOPTION(bl602_expander, gpio_pin, IOEXPANDER_OPTION_INVERT,
-                    (FAR void *)IOEXPANDER_VAL_NORMAL);
-    IOEXP_SETOPTION(bl602_expander, gpio_pin, IOEXPANDER_OPTION_INTCFG,
-                    (FAR void *)IOEXPANDER_VAL_BOTH);
+    #warning TODO: Move bl602_configgpio to GPIO Expander
+    ret = bl602_configgpio(pinset);
+    DEBUGASSERT(ret == OK);
+
+    #warning TODO: Move gpio_lower_half to GPIO Expander
     gpio_lower_half(bl602_expander, gpio_pin, GPIO_INTERRUPT_PIN, gpio_pin);
-  }
 
-  /* Testing GPIO 6: a non-inverted, level interrupting pin */
-  {
-    uint8_t gpio_pin = 6;
-
-    IOEXP_SETDIRECTION(bl602_expander, gpio_pin, IOEXPANDER_DIRECTION_IN);
-    IOEXP_SETOPTION(bl602_expander, gpio_pin, IOEXPANDER_OPTION_INVERT,
-                    (FAR void *)IOEXPANDER_VAL_NORMAL);
     IOEXP_SETOPTION(bl602_expander, gpio_pin, IOEXPANDER_OPTION_INTCFG,
-                    (FAR void *)IOEXPANDER_VAL_HIGH);
-    gpio_lower_half(bl602_expander, gpio_pin, GPIO_INTERRUPT_PIN, gpio_pin);
+                    (FAR void *)IOEXPANDER_VAL_FALLING);
   }
 #endif /* CONFIG_IOEXPANDER_BL602_EXPANDER */
 ```
@@ -248,15 +239,14 @@ We must load the GPIO Expander before other drivers (e.g. CST816S Touch Panel), 
 
 We need to disable BL602 GPIO Driver when we enable GPIO Expander, because GPIO Expander needs GPIO Lower Half which can't coexist with BL602 GPIO Driver:
 
-https://github.com/lupyuen/incubator-nuttx/blob/expander/boards/risc-v/bl602/bl602evb/src/bl602_bringup.c#L643
-
 ```c
 #if defined(CONFIG_DEV_GPIO) && !defined(CONFIG_GPIO_LOWER_HALF)
+  ret = bl602_gpio_initialize();
 ```
 
-`button_isr_handler` is defined as...
+[(Source)](https://github.com/lupyuen/incubator-nuttx/blob/expander/boards/risc-v/bl602/bl602evb/src/bl602_bringup.c#L643)
 
-https://github.com/lupyuen/incubator-nuttx/blob/expander/boards/risc-v/bl602/bl602evb/src/bl602_bringup.c#L1038-L1044
+`button_isr_handler` is defined as...
 
 ```c
 static int button_isr_handler(FAR struct ioexpander_dev_s *dev,
@@ -267,6 +257,8 @@ static int button_isr_handler(FAR struct ioexpander_dev_s *dev,
   return 0;
 }
 ```
+
+[(Source)](https://github.com/lupyuen/incubator-nuttx/blob/expander/boards/risc-v/bl602/bl602evb/src/bl602_bringup.c#L1038-L1044)
 
 # Test Touch Panel
 
