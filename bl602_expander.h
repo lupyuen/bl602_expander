@@ -26,6 +26,7 @@
  ****************************************************************************/
 
 #include <nuttx/ioexpander/ioexpander.h>
+#include "../arch/risc-v/src/bl602/bl602_gpio.h"
 
 /****************************************************************************
  * Public Data
@@ -44,7 +45,15 @@ extern FAR struct ioexpander_dev_s *bl602_expander;
 #ifdef CONFIG_IOEXPANDER_BL602_EXPANDER
 /* Init BL602 GPIO Expander */
 
-FAR struct ioexpander_dev_s *bl602_expander_initialize(void);
+FAR struct ioexpander_dev_s *bl602_expander_initialize(
+  const gpio_pinset_t *gpio_inputs,
+  uint8_t gpio_input_count,
+  const gpio_pinset_t *gpio_outputs,
+  uint8_t gpio_output_count,
+  const gpio_pinset_t *gpio_interrupts,
+  uint8_t gpio_interrupt_count,
+  const gpio_pinset_t *other_pins,
+  uint8_t other_pin_count);
 #endif
 
 #endif /* __INCLUDE_NUTTX_IOEXPANDER_BL602_EXPANDER_H */

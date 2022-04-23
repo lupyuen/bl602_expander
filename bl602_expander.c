@@ -1105,22 +1105,25 @@ static void bl602_expander_interrupt(FAR void *arg)
  * Description:
  *   Initialize a I/O Expander device.
  *
- * NOTE: There are no arguments to the initialization function this
- * skeleton example.  Typical implementations take two arguments:
- *
- * 1) A reference to an I2C or SPI interface used to interactive with the
- *    device, and
- * 2) A read-only configuration structure that provides things like:  I2C
- *    or SPI characteristics and callbacks to attach, enable, and disable
- *    interrupts.
- *
  ****************************************************************************/
 
-FAR struct ioexpander_dev_s *bl602_expander_initialize(void)
+FAR struct ioexpander_dev_s *bl602_expander_initialize(
+  const gpio_pinset_t *gpio_inputs,
+  uint8_t gpio_input_count,
+  const gpio_pinset_t *gpio_outputs,
+  uint8_t gpio_output_count,
+  const gpio_pinset_t *gpio_interrupts,
+  uint8_t gpio_interrupt_count,
+  const gpio_pinset_t *other_pins,
+  uint8_t other_pin_count)
 {
+  int i;
   int ret;
-  uint8_t gpio_pin;
+  uint8_t pin;
   FAR struct bl602_expander_dev_s *priv;
+
+  DEBUGASSERT(gpio_input_count + gpio_output_count + gpio_interrupt_count +
+    other_pin_count <= CONFIG_IOEXPANDER_NPINS);
 
 #ifdef CONFIG_BL602_EXPANDER_MULTIPLE
   /* Allocate the device state structure */
@@ -1137,20 +1140,27 @@ FAR struct ioexpander_dev_s *bl602_expander_initialize(void)
   priv = &g_skel;
 #endif
 
-  /* Initialize the device state structure
-   * NOTE: Normally you would also save the I2C/SPI device interface and
-   * any configuration information here as well.
-   */
+  /* Initialize the device state structure */
 
   priv->dev.ops = &g_bl602_expander_ops;
+  nxsem_init(&priv->exclsem, 0, 1);
 
 #ifdef CONFIG_IOEXPANDER_INT_ENABLE
+  /* Disable GPIO interrupts */
+
+  ret = bl602_expander_irq_enable(false);
+  if (ret < 0)
+    {
+      gpioerr("ERROR: Failed to disable GPIO interrupts\n");
+      kmm_free(priv);
+      return NULL;
+    }
 
   /* Disable interrupts for all GPIO Pins */
 
-  for (gpio_pin = 0; gpio_pin < CONFIG_IOEXPANDER_NPINS; gpio_pin++)
+  for (pin = 0; pin < CONFIG_IOEXPANDER_NPINS; pin++)
     {
-      bl602_expander_intmask(gpio_pin, 1);
+      bl602_expander_intmask(pin, 1);
     }
 
   /* Attach the I/O expander interrupt handler and enable interrupts */
@@ -1160,14 +1170,50 @@ FAR struct ioexpander_dev_s *bl602_expander_initialize(void)
   ret = bl602_expander_irq_enable(true);
   if (ret < 0)
     {
-      gpioerr("ERROR: Failed to enable interrupts\n");
+      gpioerr("ERROR: Failed to enable GPIO interrupts\n");
       kmm_free(priv);
       return NULL;
     }
-
 #endif
 
-  nxsem_init(&priv->exclsem, 0, 1);
+  /* Configure and register the GPIO Inputs */
+
+  for (i = 0; i < gpio_input_count; i++)
+    {
+      gpio_pinset_t pinset = gpio_inputs[i];
+      uint8_t gpio_pin = (pinset & GPIO_PIN_MASK) >> GPIO_PIN_SHIFT;
+
+      ret = bl602_configgpio(pinset);
+      DEBUGASSERT(ret == OK);
+      gpio_lower_half(&priv->dev, gpio_pin, GPIO_INPUT_PIN, gpio_pin);
+    }
+
+  /* Configure and register the GPIO Outputs */
+
+  for (i = 0; i < gpio_output_count; i++)
+    {
+      gpio_pinset_t pinset = gpio_outputs[i];
+      uint8_t gpio_pin = (pinset & GPIO_PIN_MASK) >> GPIO_PIN_SHIFT;
+
+      ret = bl602_configgpio(pinset);
+      DEBUGASSERT(ret == OK);
+      gpio_lower_half(&priv->dev, gpio_pin, GPIO_OUTPUT_PIN, gpio_pin);
+    }
+
+  /* Configure and register the GPIO Interrupts */
+
+  for (i = 0; i < gpio_interrupt_count; i++)
+    {
+      gpio_pinset_t pinset = gpio_interrupts[i];
+      uint8_t gpio_pin = (pinset & GPIO_PIN_MASK) >> GPIO_PIN_SHIFT;
+
+      ret = bl602_configgpio(pinset);
+      DEBUGASSERT(ret == OK);
+      gpio_lower_half(&priv->dev, gpio_pin, GPIO_INTERRUPT_PIN, gpio_pin);
+    }
+
+  /* TODO: Validate the other pins (I2C, SPI, etc) */
+
   return &priv->dev;
 }
 
