@@ -233,6 +233,8 @@ What happens when we try to support 23 GPIOs on PineDio Stack BL604? Yep the GPI
 
 All 23 GPIOs on PineDio Stack #BL604 are wired up! Let's simplify NuttX and name the GPIOs as "/dev/gpio0" to "/dev/gpio22".
 
+-   [PineDio Stack GPIO Assignment](https://lupyuen.github.io/articles/pinedio2#appendix-gpio-assignment)
+
 (So that "/dev/gpioN" will map to BL602 GPIO Pin N)
 
 TODO
