@@ -241,6 +241,8 @@ TODO
 
 BL602 GPIO Expander tested OK with Touch Panel and LVGL Test App...
 
+(With "GPIO Informational Output" logging enabled: `kconfig-tweak --enable CONFIG_DEBUG_GPIO_INFO`)
+
 ```text
 bl602_expander_irq_enable: Disable interrupt
 bl602_expander_irq_enable: Enable interrupt
@@ -634,13 +636,17 @@ bl602_expander_readpin: pin=12, value=1
 
 BL602 GPIO Expander tested OK with LoRaWAN Test App...
 
-(With "GPIO Informational Output" logging disabled)
+(With "GPIO Informational Output" logging disabled: `kconfig-tweak --disable CONFIG_DEBUG_GPIO_INFO`)
 
 ```text
 bl602_expander_direction: Unsupported direction: pin=10, direction=IN
 bl602_expander_option: ERROR: Unsupported interrupt: 0, pin=10
+bl602_expander_direction: Unsupported direction: pin=20, direction=OUT
+bl602_expander_direction: Unsupported direction: pin=3, direction=OUT
+bl602_expander_direction: Unsupported direction: pin=21, direction=OUT
 bl602_expander_direction: Unsupported direction: pin=15, direction=OUT
-bl602_expander_option:Unsupported interrupt both edge: pin=9
+bl602_expander_direction: Unsupported direction: pin=14, direction=OUT
+bl602_expander_option: Unsupported interrupt both edge: pin=9
 gplh_enable: WARNING: pin9: Already detached
 bl602_expander_option: Unsupported interrupt both edge: pin=12
 gplh_enable: WARNING: pin12: Already detached
@@ -652,15 +658,19 @@ cst816s_register: Driver registered
 NuttShell (NSH) NuttX-10.3.0-RC0
 
 nsh> uname -a
-NuttX 10.3.0-RC0 77c243655b-dirty Apr 23 2022 16:51:47 risc-v bl602evb
+NuttX 10.3.0-RC0 4cdcdebe37 Apr 24 2022 10:59:55 risc-v bl602evb
 
 nsh> ls /dev
 /dev:
  console
  gpio10
  gpio12
+ gpio14
  gpio15
  gpio19
+ gpio20
+ gpio21
+ gpio3
  gpio9
  i2c0
  input0
@@ -675,13 +685,13 @@ nsh> ls /dev
 nsh> lorawan_test
 init_entropy_pool
 offset = 2228
-temperature = 30.439829 Celsius
+temperature = 32.632530 Celsius
 offset = 2228
-temperature = 34.180317 Celsius
-offset = 2228
-temperature = 36.501999 Celsius
+temperature = 33.148460 Celsius
 offset = 2228
 temperature = 32.116600 Celsius
+offset = 2228
+temperature = 33.406422 Celsius
 
 ###### ===================================== ######
 
@@ -704,8 +714,8 @@ TODO: RtcGetCalendarTime
 TODO: SX126xReset
 init_gpio
 DIO1 pintype before=5
-init_gpio: change DIO1 to Trigger GPIO gplh_enable: WARNING: pin19: Already detached
-Interrupt on Rising Edge
+init_gpio: change DIO1 to Trigger GPIO gInterrupt on Rising Edge
+plh_enable: WARNING: pin19: Already detached
 DIO1 pintype after=8
 Starting process_dio1
 init_spi
@@ -740,15 +750,16 @@ TimerInit:     0x4201c29c
 TODO: RtcGetCalendarTime
 TODO: RtcBkupRead
 TODO: RtcBkupRead
-RadioSetChannel: freq=923200000
+RadioSetChannel: freq=923400000
 RadioSetTxConfig: modem=1, power=13, fdev=0, bandwidth=0, datarate=10, coderate=1, preambleLen=8, fixLen=0, crcOn=1, freqHopOn=0, hopPeriod=0, iqInverted=0, timeout=4000
 RadioSetTxConfig: SpreadingFactor=10, Bandwidth=4, CodingRate=1, LowDatarateOptimize=0, PreambleLength=8, HeaderType=0, PayloadLength=255, CrcMode=1, InvertIQ=0
 RadioStandby
-RaSX126xSetTxParams: power=13, rampTime=7
+RadioSetModem
+SX126xSetTxParams: power=13, rampTime=7
 SX126xSetPaConfig: paDutyCycle=4, hpMax=7, deviceSel=0, paLut=1
-SecureElementRandomNumber: 0xdeaedf3d
+SecureElementRandomNumber: 0x2441db2f
 RadioSend: size=23
-00 00 00 00 00 00 00 00 00 5b b1 7b 37 e7 5e c1 4b 3d df f2 52 ef 97
+00 00 00 00 00 00 00 00 00 5b b1 7b 37 e7 5e c1 4b 2f db c4 bb a1 06
 RadioSend: PreambleLength=8, HeaderType=0, PayloadLength=23, CrcMode=1, InvertIQ=0
 TimerStop:     0x4201b864
 TimerStart2:   0x4201b864, 4000 ms
@@ -797,7 +808,7 @@ callout_handler: lock
 handle_event_queue: ev=0x4201c780
 TimerStop:     0x4201c780
 RadioStandby
-RadioSetChannel: freq=923200000
+RadioSetChannel: freq=923400000
 RadioSetRxConfig
 RadioStandby
 RadioSetModem
@@ -811,7 +822,7 @@ RadioIrqProcess
 DIO1 add event
 handle_event_queue: ev=0x4201b88c
 RadioOnDioIrq
-RadoIrqProcess
+RadioIrqProcess
 IRQ_PREAMBLE_DETECTED
 RadioOnDioIrq
 RadioIrqProcess
@@ -841,7 +852,7 @@ OnJoinRequest
 
 OTAA
 
-DevAddr     :  00FFB917
+DevAddr     :  012869CB
 
 
 DATA RATE   : DR_2
@@ -866,13 +877,13 @@ RadioSetModem
 SX126xSetTxParams: power=13, rampTime=7
 SX126xSetPaConfig: paDutyCycle=4, hpMax=7, deviceSel=0, paLut=1
 RadioSend: size=22
-40 17 b9 ff 00 00 01 00 01 13 c2 ae 9e dc cc 51 1d 12 1e 18 ef 27
+40 cb 69 28 01 00 01 00 01 bb 2c bc f8 81 19 ac d1 a8 fa 16 e2 bc
 RadioSend: PreambleLength=8, HeaderType=0, PayloadLength=22, CrcMode=1, InvertIQ=0
 TimerStop:     0x4201b864
 TimerStart2:   0x4201b864, 4000 ms
 callout_reset: evq=0x420131a8, ev=0x4201b864
 
-###### =========== MCP-Request ============ ######
+###### =========== MCPS-Request ============ ######
 ######           MCPS_UNCONFIRMED            ######
 ###### ===================================== ######
 STATUS      : OK
@@ -884,7 +895,7 @@ RadioIrqProcess
 IRQ_TX_DONE
 TimerStop:     0x4201b864
 TODO: RtcGetCalendarTime
-TODO: RtcBkupRad
+TODO: RtcBkupRead
 RadioOnDioIrq
 RadioIrqProcess
 RadioSleep
@@ -967,7 +978,7 @@ PrepareTxFrame: status=0, maxSize=53, currentSize=53
 LmHandlerSend: Data frame
 TODO: RtcGetCalendarTime
 TODO: RtcBkupRead
-RadioSetChannel: freq=923400000
+RadioSetChannel: freq=923200000
 RadioSetTxConfig: modem=1, power=13, fdev=0, bandwidth=0, datarate=9, coderate=1, preambleLen=8, fixLen=0, crcOn=1, freqHopOn=0, hopPeriod=0, iqInverted=0, timeout=4000
 RadioSetTxConfig: SpreadingFactor=9, Bandwidth=4, CodingRate=1, LowDatarateOptimize=0, PreambleLength=8, HeaderType=0, PayloadLength=128, CrcMode=1, InvertIQ=0
 RadioStandby
@@ -975,7 +986,7 @@ RadioSetModem
 SX126xSetTxParams: power=13, rampTime=7
 SX126xSetPaConfig: paDutyCycle=4, hpMax=7, deviceSel=0, paLut=1
 RadioSend: size=22
-40 17 b9 ff 00 00 02 00 01 39 dc c2 54 9c af 14 e6 8c 90 e9 2c 59
+40 cb 69 28 01 00 02 00 01 c3 18 2b 5f 5e 94 41 aa 0e 9a 63 a2 a1
 RadioSend: PreambleLength=8, HeaderType=0, PayloadLength=22, CrcMode=1, InvertIQ=0
 TimerStop:     0x4201b864
 TimerStart2:   0x4201b864, 4000 ms
@@ -989,7 +1000,7 @@ PrepareTxFrame: Transmit OK
 DIO1 add event
 handle_event_queue: ev=0x4201b88c
 RadioOnDioIrq
-RadioIrqProcess
+RadiIrqProcess
 IRQ_TX_DONE
 TimerStop:     0x4201b864
 TODO: RtcGetCalendarTime
@@ -1014,7 +1025,7 @@ callout_handler: lock
 handle_event_queue: ev=0x4201c780
 TimerStop:     0x4201c780
 RadioStandby
-RadioSetChannel: freq=923400000
+RadioSetChannel: freq=923200000
 RadioSetRxConfig
 RadioStandby
 RadioSetModem
@@ -1050,7 +1061,7 @@ TX DATA     : UNCONFIRMED
 48 69 20 4E 75 74 74 58 00
 
 DATA RATE   : DR_3
-U/L FREQ    : 923400000
+U/L FREQ    : 923200000
 TX POWER    : 0
 CHANNEL MASK: 0003
 
