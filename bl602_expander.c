@@ -39,6 +39,22 @@
 
 #if defined(CONFIG_IOEXPANDER_BL602_EXPANDER)
 
+#ifndef CONFIG_IOEXPANDER_INT_ENABLE
+#error GPIO Interrupts must be handled by BL602 GPIO Expander
+#endif /* !CONFIG_IOEXPANDER_INT_ENABLE */
+
+#ifndef CONFIG_GPIO_LOWER_HALF
+#error GPIO Lower Half is required by BL602 GPIO Expander
+#endif /* !CONFIG_GPIO_LOWER_HALF */
+
+#ifdef CONFIG_BL602_EXPANDER_MULTIPLE
+#error Multiple BL602 GPIO Expanders are not supported
+#endif /* CONFIG_BL602_EXPANDER_MULTIPLE */
+
+#ifdef CONFIG_IOEXPANDER_MULTIPIN
+#error Multipin BL602 GPIO Expander is not supported
+#endif /* CONFIG_IOEXPANDER_MULTIPIN */
+
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -52,9 +68,9 @@
 
 struct bl602_expander_callback_s
 {
-  ioe_pinset_t pinset;          /* Set of pin interrupts that will generate the callback */
-  ioe_callback_t cbfunc;        /* The saved callback function pointer */
-  FAR void* cbarg;              /* The saved callback argument */
+  ioe_pinset_t pinset;   /* Set of pins that will trigger the interrupt callback */
+  ioe_callback_t cbfunc; /* Callback function */
+  FAR void* cbarg;       /* Callback argument */
 };
 #endif
 
