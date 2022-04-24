@@ -16,6 +16,8 @@ Warning: [BL602 EVB GPIO Driver](https://github.com/lupyuen/incubator-nuttx/blob
 
 (Because GPIO Expander needs GPIO Lower Half which conflicts with BL602 EVB GPIO Driver)
 
+GPIO Expander verifies that the GPIO, SPI, I2C and UART Pins don't reuse the same GPIO.
+
 Robert Lipe has an excellent article that explains the current limitations of the BL602 EVB GPIO Driver (and why we need the GPIO Expander)...
 
 -   ["Buttons on BL602 NuttX"](https://www.robertlipe.com/buttons-on-bl602-nuttx/)
@@ -53,9 +55,7 @@ Robert Lipe has an excellent article that explains the current limitations of th
 
 -   Logging for SPI Test Driver has been moved from "Enable Informational Debug Output" to "SPI Informational Output"
 
-__TODO__: GPIO Expander will enforce checks at runtime to be sure that NuttX Apps don't tamper with the GPIOs used by SPI, I2C and UART
-
-__TODO__: GPIO Expander will check that the SPI / I2C / UART Pins are correctly defined (e.g. MISO vs MOSI) and are not reused
+__TODO__: GPIO Expander will check that the SPI / I2C / UART Pin Functions are correctly defined (e.g. MISO vs MOSI)
 
 # Install Driver
 

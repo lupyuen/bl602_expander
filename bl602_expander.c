@@ -1120,6 +1120,7 @@ FAR struct ioexpander_dev_s *bl602_expander_initialize(
   int i;
   int ret;
   uint8_t pin;
+  bool gpio_is_used[CONFIG_IOEXPANDER_NPINS];
   FAR struct bl602_expander_dev_s *priv;
 
   DEBUGASSERT(gpio_input_count + gpio_output_count + gpio_interrupt_count +
@@ -1176,6 +1177,10 @@ FAR struct ioexpander_dev_s *bl602_expander_initialize(
     }
 #endif
 
+  /* Mark the GPIOs in use */
+
+  memset(gpio_is_used, 0, sizeof(gpio_is_used));
+
   /* Configure and register the GPIO Inputs */
 
   for (i = 0; i < gpio_input_count; i++)
@@ -1184,6 +1189,14 @@ FAR struct ioexpander_dev_s *bl602_expander_initialize(
       uint8_t gpio_pin = (pinset & GPIO_PIN_MASK) >> GPIO_PIN_SHIFT;
 
       DEBUGASSERT(gpio_pin < CONFIG_IOEXPANDER_NPINS);
+      if (gpio_is_used[gpio_pin])
+        {
+          gpioerr("ERROR: GPIO pin %d is already in use\n", gpio_pin);
+          kmm_free(priv);
+          return NULL;
+        }
+      gpio_is_used[gpio_pin] = true;
+
       ret = bl602_configgpio(pinset);
       DEBUGASSERT(ret == OK);
       gpio_lower_half(&priv->dev, gpio_pin, GPIO_INPUT_PIN, gpio_pin);
@@ -1197,6 +1210,14 @@ FAR struct ioexpander_dev_s *bl602_expander_initialize(
       uint8_t gpio_pin = (pinset & GPIO_PIN_MASK) >> GPIO_PIN_SHIFT;
 
       DEBUGASSERT(gpio_pin < CONFIG_IOEXPANDER_NPINS);
+      if (gpio_is_used[gpio_pin])
+        {
+          gpioerr("ERROR: GPIO pin %d is already in use\n", gpio_pin);
+          kmm_free(priv);
+          return NULL;
+        }
+      gpio_is_used[gpio_pin] = true;
+
       ret = bl602_configgpio(pinset);
       DEBUGASSERT(ret == OK);
       gpio_lower_half(&priv->dev, gpio_pin, GPIO_OUTPUT_PIN, gpio_pin);
@@ -1210,12 +1231,20 @@ FAR struct ioexpander_dev_s *bl602_expander_initialize(
       uint8_t gpio_pin = (pinset & GPIO_PIN_MASK) >> GPIO_PIN_SHIFT;
 
       DEBUGASSERT(gpio_pin < CONFIG_IOEXPANDER_NPINS);
+      if (gpio_is_used[gpio_pin])
+        {
+          gpioerr("ERROR: GPIO pin %d is already in use\n", gpio_pin);
+          kmm_free(priv);
+          return NULL;
+        }
+      gpio_is_used[gpio_pin] = true;
+
       ret = bl602_configgpio(pinset);
       DEBUGASSERT(ret == OK);
       gpio_lower_half(&priv->dev, gpio_pin, GPIO_INTERRUPT_PIN, gpio_pin);
     }
 
-  /* TODO: Validate the other pins (I2C, SPI, etc) */
+  /* Validate the other pins (I2C, SPI, etc) */
 
   for (i = 0; i < other_pin_count; i++)
     {
@@ -1223,7 +1252,16 @@ FAR struct ioexpander_dev_s *bl602_expander_initialize(
       uint8_t gpio_pin = (pinset & GPIO_PIN_MASK) >> GPIO_PIN_SHIFT;
 
       DEBUGASSERT(gpio_pin < CONFIG_IOEXPANDER_NPINS);
+      if (gpio_is_used[gpio_pin])
+        {
+          gpioerr("ERROR: GPIO pin %d is already in use\n", gpio_pin);
+          kmm_free(priv);
+          return NULL;
+        }
+      gpio_is_used[gpio_pin] = true;
     }
+
+  /* TODO: Validate the Pin Functions (e.g. MISO vs MOSI) */
 
   return &priv->dev;
 }
