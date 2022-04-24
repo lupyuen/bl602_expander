@@ -239,6 +239,31 @@ All 23 GPIOs on PineDio Stack #BL604 are wired up! Let's simplify NuttX and name
 
 TODO
 
+# Check Reused GPIOs
+
+GPIO Expander verifies that the GPIO, SPI, I2C and UART Pins don't reuse the same GPIO.
+
+If GPIOs are reused in `board.h`...
+
+```c
+#define BOARD_SPI_CLK  (GPIO_INPUT | GPIO_PULLUP | GPIO_FUNC_SPI | GPIO_PIN11)
+...
+#define BOARD_BUTTON_INT (GPIO_INPUT | GPIO_FLOAT | GPIO_FUNC_SWGPIO | GPIO_PIN11)
+```
+
+Then GPIO Expander will halt with an error...
+
+```text
+bl602_expander_option: pin=11, option=2, value=0xe
+bl602_expander_option: Unsupported interrupt both edge: pin=11
+gplh_enable: pin11: Disabling callback=0 handle=0
+gplh_enable: WARNING: pin11: Already detached
+gpio_pin_register: Registering /dev/gpio11
+...
+bl602_expander_initialize: ERROR: GPIO pin 11 is already in use
+up_assert: Assertion failed at file:mm_heap/mm_free.c line: 102 task: nsh_main
+```
+
 # Test Touch Panel
 
 BL602 GPIO Expander tested OK with Touch Panel and LVGL Test App...
