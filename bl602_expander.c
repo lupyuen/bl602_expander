@@ -48,11 +48,7 @@
  ****************************************************************************/
 
 #ifdef CONFIG_IOEXPANDER_INT_ENABLE
-/* Interrupt Handler */
-
-typedef int isr_handler(int irq, FAR void *context, FAR void *arg);
-
-/* This type represents on registered pin interrupt callback */
+/* Callback for a registered pin interrupt */
 
 struct bl602_expander_callback_s
 {
@@ -62,7 +58,7 @@ struct bl602_expander_callback_s
 };
 #endif
 
-/* This structure represents the state of the I/O Expander driver */
+/* I/O Expander Driver State */
 
 struct bl602_expander_dev_s
 {
@@ -423,7 +419,7 @@ static int bl602_expander_direction(FAR struct ioexpander_dev_s *dev, uint8_t pi
       return -EINVAL;
     }
 
-  gpiowarn("Unsupported direction: pin=%u, direction=%s\n",
+  gpioinfo("WARNING: Unimplemented direction: pin=%u, direction=%s\n",
            pin, (direction == IOEXPANDER_DIRECTION_IN) ? "IN" : "OUT");
   DEBUGASSERT(priv != NULL && pin < CONFIG_IOEXPANDER_NPINS);
 
@@ -502,9 +498,15 @@ static int bl602_expander_option(FAR struct ioexpander_dev_s *dev, uint8_t pin,
                   break;
                 }
 
-              case IOEXPANDER_VAL_BOTH: /* Both Edge (Unsupported) */
+              case IOEXPANDER_VAL_BOTH: /* Both Edge (Unimplemented) */
                 {
-                  gpiowarn("Unsupported interrupt both edge: pin=%u\n", pin);
+                  gpioinfo("WARNING: Unimplemented interrupt both edge: pin=%u\n", pin);
+                  break;
+                }
+
+              case IOEXPANDER_VAL_DISABLE: /* Disable (Unimplemented) */
+                {
+                  gpioinfo("WARNING: Unimplemented disable interrupt, use detach instead: pin=%u\n", pin);
                   break;
                 }
 
@@ -680,27 +682,7 @@ static int bl602_expander_readbuf(FAR struct ioexpander_dev_s *dev,
 static int bl602_expander_getmultibits(FAR struct bl602_expander_dev_s *priv, FAR uint8_t *pins,
                              FAR bool *values, int count)
 {
-  ioe_pinset_t pinset;
-  int pin;
-  int ret = OK;
-  int i;
-
-  /* Read the pinset from the IO-Expander hardware */
-#warning Missing logic
-
-  /* Read the requested bits */
-
-  for (i = 0; i < count; i++)
-    {
-      pin = pins[i];
-      if (pin >= CONFIG_IOEXPANDER_NPINS)
-        {
-          return -ENXIO;
-        }
-
-      values[i] = (((pinset >> pin) & 1) != 0);
-    }
-
+  #error Not implemented
   return OK;
 }
 #endif
@@ -726,49 +708,8 @@ static int bl602_expander_getmultibits(FAR struct bl602_expander_dev_s *priv, FA
 static int bl602_expander_multiwritepin(FAR struct ioexpander_dev_s *dev,
                               FAR uint8_t *pins, FAR bool *values, int count)
 {
-  FAR struct bl602_expander_dev_s *priv = (FAR struct bl602_expander_dev_s *)dev;
-  ioe_pinset_t pinset;
-  int pin;
-  int ret;
-  int i;
-
-  /* Get exclusive access to the I/O Expander */
-
-  ret = bl602_expander_lock(priv);
-  if (ret < 0)
-    {
-      return ret;
-    }
-
-  /* Read the pinset from the IO-Expander hardware */
-#warning Missing logic
-
-  /* Apply the user defined changes */
-
-  for (i = 0; i < count; i++)
-    {
-      pin = pins[i];
-      if (pin >= CONFIG_IOEXPANDER_NPINS)
-        {
-          bl602_expander_unlock(priv);
-          return -ENXIO;
-        }
-
-      if (values[i])
-        {
-          pinset |= ((ioe_pinset_t)1 << pin);
-        }
-      else
-        {
-          pinset &= ~((ioe_pinset_t)1 << pin);
-        }
-    }
-
-  /* Now write back the new pins states */
-#warning Missing logic
-
-  bl602_expander_unlock(priv);
-  return ret;
+  #error Not implemented
+  return 0;
 }
 #endif
 
@@ -993,107 +934,6 @@ static int bl602_expander_detach(FAR struct ioexpander_dev_s *dev, FAR void *han
   return OK;
 }
 #endif
-
-#ifdef NOTUSED
-/****************************************************************************
- * Name: bl602_expander_irqworker
- *
- * Description:
- *   Handle GPIO interrupt events (this function actually executes in the
- *   context of the worker thread).
- *
- ****************************************************************************/
-
-static void bl602_expander_irqworker(void *arg)
-{
-  FAR struct bl602_expander_dev_s *priv = (FAR struct bl602_expander_dev_s *)arg;
-  ioe_pinset_t pinset;
-  int ret;
-  int i;
-
-  /* Read the pinset from the IO-Expander hardware */
-#warning Missing logic
-
-  /* Perform pin interrupt callbacks */
-
-  for (i = 0; i < CONFIG_IOEXPANDER_NPINS; i++)
-    {
-      /* Is this entry valid (i.e., callback attached)?  If so, did andy of
-       * the requested pin interrupts occur?
-       */
-
-      if (priv->cb[i].cbfunc != NULL)
-        {
-          /* Did any of the requested pin interrupts occur? */
-
-          ioe_pinset_t match = pinset & priv->cb[i].pinset;
-          if (match != 0)
-            {
-              /* Yes.. perform the callback */
-
-              priv->cb[i].cbfunc(&priv->dev, match, priv->cb[i].cbarg);
-            }
-        }
-    }
-
-  /* Re-enable interrupts */
-#warning Missing logic
-}
-#endif /* NOTUSED */
-
-#ifdef NOTUSED
-/****************************************************************************
- * Name: bl602_expander_interrupt
- *
- * Description:
- *   Handle GPIO interrupt events (this function executes in the
- *   context of the interrupt).
- *
- *   NOTE: A more typical prototype for an interrupt handler would be:
- *
- *     int bl602_expander_interrupt(int irq, FAR void *context, FAR void *arg)
- *
- *   However, it is assume that the lower half, board specific interface
- *   can provide intercept the actual interrupt, and call this function with
- *   the arg that can be mapped to the provide driver structure instance.
- *
- *   Presumably the lower level interface provides an attach() method that
- *   provides both the address of bl602_expander_interrupt() as well as the arg value.
- *
- ****************************************************************************/
-
-static void bl602_expander_interrupt(FAR void *arg)
-{
-  FAR struct bl602_expander_dev_s *priv = (FAR struct bl602_expander_dev_s *)arg;
-
-  DEBUGASSERT(priv != NULL);
-
-  /* Defer interrupt processing to the worker thread.  This is not only
-   * much kinder in the use of system resources but is probably necessary
-   * to access the I/O expander device.
-   *
-   * Notice that further GPIO interrupts are disabled until the work is
-   * actually performed.  This is to prevent overrun of the worker thread.
-   * Interrupts are re-enabled in bl602_expander_irqworker() when the work is
-   * completed.
-   */
-
-  if (work_available(&priv->work))
-    {
-      /* Disable interrupts */
-#warning Missing logic
-
-      /* Schedule interrupt related work on the high priority worker
-       * thread.
-       */
-
-      work_queue(HPWORK, &priv->work, bl602_expander_irqworker,
-                 (FAR void *)priv, 0);
-    }
-
-  return OK;
-}
-#endif /* NOTUSED */
 
 /****************************************************************************
  * Public Functions
