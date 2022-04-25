@@ -291,6 +291,8 @@ All 23 GPIOs on PineDio Stack BL604 are wired up. Let's simplify NuttX and name 
 
 (So that "/dev/gpioN" will map to BL602 GPIO Pin N)
 
+# GPIO Expander
+
 NuttX lets us create I/O Expander Drivers that will handle many GPIOs (Input / Output / Interrupt). Perfect for PineDio Stack BL604!
 
 Apache NuttX RTOS helpfully provides a Skeleton Driver for I/O Expander. Let's flesh it out for PineDio Stack BL604
