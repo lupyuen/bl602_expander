@@ -347,7 +347,9 @@ As noted by Robert Lipe, attaching a BL602 GPIO Interrupt Handler is hard...
 
 Let's fix this with our GPIO Expander for Apache NuttX RTOS...
 
-To handle the GPIO Interrupt that's triggered when we press the Push Button...
+## Push Button Interrupt
+
+To handle the GPIO Interrupt that's triggered when we press the Push Button on PineDio Stack...
 
 ```c
 #include <nuttx/ioexpander/gpio.h>
@@ -385,6 +387,43 @@ static int button_isr_handler(FAR struct ioexpander_dev_s *dev, ioe_pinset_t pin
 [(Source)](https://github.com/lupyuen/incubator-nuttx/blob/2982b3a99057c5935ca9150b9f0f1da3565c6061/boards/risc-v/bl602/bl602evb/src/bl602_bringup.c#L1038-L1044)
 
 Note that the Button Interrupt Handler runs in the context of the Interrupt Handler. Be careful!
+
+## Touch Panel Interrupt
+
+The CST816S Driver for PineDio Stack's Touch Panel now calls GPIO Expander to attach the GPIO Interrupt Handler...
+
+```c
+//  Register the CST816S device (e.g. /dev/input0)
+int cst816s_register(FAR const char *devpath, FAR struct i2c_master_s *i2c_dev, uint8_t i2c_devaddr) {
+  ...
+
+  /* Configure GPIO interrupt to be triggered on falling edge. */
+
+  DEBUGASSERT(bl602_expander != NULL);
+  IOEXP_SETOPTION(bl602_expander, gpio_pin, IOEXPANDER_OPTION_INTCFG,
+                  (FAR void *)IOEXPANDER_VAL_FALLING);
+
+  /* Attach GPIO interrupt handler. */
+
+  handle = IOEP_ATTACH(bl602_expander,
+                       (ioe_pinset_t)1 << gpio_pin,
+                       cst816s_isr_handler,
+                       priv);
+  if (handle == NULL)
+    {
+      kmm_free(priv);
+      ierr("Attach interrupt failed\n");
+      return ret;
+    }
+```
+
+[(Source)](https://github.com/lupyuen/cst816s-nuttx/blob/expander/cst816s.c#L661-L678)
+
+TODO
+
+## LoRa SX1262 DIO1 Interrupt
+
+TODO
 
 # Check Reused GPIOs
 
