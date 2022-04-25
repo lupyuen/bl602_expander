@@ -297,6 +297,8 @@ Easier for devs to create new NuttX Drivers!
 
 NuttX lets us create I/O Expander Drivers that will handle many GPIOs (Input / Output / Interrupt). Perfect for PineDio Stack BL604!
 
+-   [NuttX I/O Expander Interface](https://github.com/apache/incubator-nuttx/blob/master/include/nuttx/ioexpander/ioexpander.h)
+
 Apache NuttX RTOS helpfully provides a Skeleton Driver for I/O Expander. Let's flesh it out for PineDio Stack BL604's GPIO Expander...
 
 -   [Skeleton Driver for I/O Expander](https://github.com/apache/incubator-nuttx/blob/master/drivers/ioexpander/skeleton.c)
