@@ -164,7 +164,7 @@ int bl602_bringup(void) {
 #endif /* CONFIG_IOEXPANDER_BL602_EXPANDER */
 ```
 
-All GPIOs are defined listed in `bl602_gpio_inputs` / `outputs` / `interrupts` / `other pins`...
+To validate the GPIOs at startup, all GPIOs shall be listed in `bl602_gpio_inputs`, `bl602_gpio_outputs`, `bl602_gpio_interrupts` and `bl602_other_pins`...
 
 ```c
 #ifdef CONFIG_IOEXPANDER_BL602_EXPANDER
@@ -175,6 +175,7 @@ static const gpio_pinset_t bl602_gpio_inputs[] =
 #ifdef BOARD_SX1262_BUSY
   BOARD_SX1262_BUSY,
 #endif  /* BOARD_SX1262_BUSY */
+...
 };
 
 /* GPIO Output Pins for BL602 GPIO Expander */
@@ -184,18 +185,7 @@ static const gpio_pinset_t bl602_gpio_outputs[] =
 #ifdef BOARD_LCD_CS
   BOARD_LCD_CS,
 #endif  /* BOARD_LCD_CS */
-#ifdef BOARD_LCD_RST
-  BOARD_LCD_RST,
-#endif  /* BOARD_LCD_RST */
-#ifdef BOARD_LCD_BL
-  BOARD_LCD_BL,
-#endif  /* BOARD_LCD_BL */
-#ifdef BOARD_SX1262_CS
-  BOARD_SX1262_CS,
-#endif  /* BOARD_SX1262_CS */
-#ifdef BOARD_FLASH_CS
-  BOARD_FLASH_CS,
-#endif  /* BOARD_FLASH_CS */
+...
 };
 
 /* GPIO Interrupt Pins for BL602 GPIO Expander */
@@ -205,12 +195,7 @@ static const gpio_pinset_t bl602_gpio_interrupts[] =
 #ifdef BOARD_TOUCH_INT
   BOARD_TOUCH_INT,
 #endif  /* BOARD_TOUCH_INT */
-#ifdef BOARD_BUTTON_INT
-  BOARD_BUTTON_INT,
-#endif  /* BOARD_BUTTON_INT */
-#ifdef BOARD_SX1262_DIO1
-  BOARD_SX1262_DIO1,
-#endif  /* BOARD_SX1262_DIO1 */
+...
 };
 
 /* Other Pins for BL602 GPIO Expander (For Validation Only) */
@@ -220,48 +205,7 @@ static const gpio_pinset_t bl602_other_pins[] =
 #ifdef BOARD_UART_0_RX_PIN
   BOARD_UART_0_RX_PIN,
 #endif  /* BOARD_UART_0_RX_PIN */
-#ifdef BOARD_UART_0_TX_PIN
-  BOARD_UART_0_TX_PIN,
-#endif  /* BOARD_UART_0_TX_PIN */
-#ifdef BOARD_UART_1_RX_PIN
-  BOARD_UART_1_RX_PIN,
-#endif  /* BOARD_UART_1_RX_PIN */
-#ifdef BOARD_UART_1_TX_PIN
-  BOARD_UART_1_TX_PIN,
-#endif  /* BOARD_UART_1_TX_PIN */
-#ifdef BOARD_PWM_CH0_PIN
-  BOARD_PWM_CH0_PIN,
-#endif  /* BOARD_PWM_CH0_PIN */
-#ifdef BOARD_PWM_CH1_PIN
-  BOARD_PWM_CH1_PIN,
-#endif  /* BOARD_PWM_CH1_PIN */
-#ifdef BOARD_PWM_CH2_PIN
-  BOARD_PWM_CH2_PIN,
-#endif  /* BOARD_PWM_CH2_PIN */
-#ifdef BOARD_PWM_CH3_PIN
-  BOARD_PWM_CH3_PIN,
-#endif  /* BOARD_PWM_CH3_PIN */
-#ifdef BOARD_PWM_CH4_PIN
-  BOARD_PWM_CH4_PIN,
-#endif  /* BOARD_PWM_CH4_PIN */
-#ifdef BOARD_I2C_SCL
-  BOARD_I2C_SCL,
-#endif  /* BOARD_I2C_SCL */
-#ifdef BOARD_I2C_SDA
-  BOARD_I2C_SDA,
-#endif  /* BOARD_I2C_SDA */
-#ifdef BOARD_SPI_CS
-  BOARD_SPI_CS,
-#endif  /* BOARD_SPI_CS */
-#ifdef BOARD_SPI_MOSI
-  BOARD_SPI_MOSI,
-#endif  /* BOARD_SPI_MOSI */
-#ifdef BOARD_SPI_MISO
-  BOARD_SPI_MISO,
-#endif  /* BOARD_SPI_MISO */
-#ifdef BOARD_SPI_CLK
-  BOARD_SPI_CLK,
-#endif  /* BOARD_SPI_CLK */
+...
 };
 #endif  /* CONFIG_IOEXPANDER_BL602_EXPANDER */
 ```
@@ -341,7 +285,7 @@ Which can be super confusing because "/dev/gpio0" doesn't actually map to BL602 
 
 What happens when we try to support 23 GPIOs on PineDio Stack BL604? Yep the GPIO Names will look really messy on NuttX.
 
-All 23 GPIOs on PineDio Stack #BL604 are wired up! Let's simplify NuttX and name the GPIOs as "/dev/gpio0" to "/dev/gpio22".
+All 23 GPIOs on PineDio Stack BL604 are wired up. Let's simplify NuttX and name the GPIOs as "/dev/gpio0" to "/dev/gpio22".
 
 -   [PineDio Stack GPIO Assignment](https://lupyuen.github.io/articles/pinedio2#appendix-gpio-assignment)
 
@@ -357,7 +301,7 @@ Apache NuttX RTOS helpfully provides a Skeleton Driver for I/O Expander. Let's f
 
 GPIO Interrupt Handling gets tricky for PineDio Stack BL604: All GPIO Interrupts are multiplexed into a single IRQ. Our GPIO Expander can help. 
 
-Here's the existing code that attaches a BL602 EVB GPIO Interrupt Handler...
+Here's the existing code for BL602 EVB that attaches a GPIO Interrupt Handler...
 
 ```c
 static int gpint_attach(struct gpio_dev_s *dev, pin_interrupt_t callback)
@@ -387,17 +331,21 @@ static int gpint_attach(struct gpio_dev_s *dev, pin_interrupt_t callback)
 
 Note that all GPIO Interrupts are multiplexed into a single IRQ: `BL602_IRQ_GPIO_INT0`
 
-Our GPIO Expander needs to demultiplex the `BL602_IRQ_GPIO_INT0` IRQ into multiple GPIO Interrupts when handling them.
+When handling GPIO Interrupts, our GPIO Expander needs to demultiplex the `BL602_IRQ_GPIO_INT0` IRQ into multiple GPIO Interrupts.
 
 As noted by Robert Lipe, attaching a BL602 GPIO Interrupt Handler is hard. Let's fix this with our GPIO Expander for Apache NuttX RTOS
 
 -   ["Buttons on BL602 NuttX"](https://www.robertlipe.com/buttons-on-bl602-nuttx/)
 
-TODO
-
 # Check Reused GPIOs
 
-GPIO Expander verifies that the GPIO, SPI, I2C and UART Pins don't reuse the same GPIO.
+Tracking all 23 GPIOs used by PineDio Stack BL604 can get challenging... We might reuse GPIOs by mistake! Our NuttX GPIO Expander shall validate the GPIOs at startup.
+
+Here are the GPIOs currently defined for PineDio Stack...
+
+-   [`board.h`](https://github.com/lupyuen/incubator-nuttx/blob/expander/boards/risc-v/bl602/bl602evb/include/board.h#L61-L145)
+
+At startup, GPIO Expander verifies that the GPIO, SPI, I2C and UART Pins don't reuse the same GPIO.
 
 If GPIOs are reused in `board.h`...
 
@@ -407,7 +355,7 @@ If GPIOs are reused in `board.h`...
 #define BOARD_BUTTON_INT (GPIO_INPUT | GPIO_FLOAT | GPIO_FUNC_SWGPIO | GPIO_PIN11)
 ```
 
-Then GPIO Expander will halt with an error...
+Then GPIO Expander will halt with an error at startup...
 
 ```text
 bl602_expander_option: pin=11, option=2, value=0xe
@@ -419,6 +367,97 @@ gpio_pin_register: Registering /dev/gpio11
 bl602_expander_initialize: ERROR: GPIO pin 11 is already in use
 up_assert: Assertion failed at file:mm_heap/mm_free.c line: 102 task: nsh_main
 ```
+
+We implement this by listing all GPIOs in `bl602_gpio_inputs`, `bl602_gpio_outputs`, `bl602_gpio_interrupts` and `bl602_other_pins`...
+
+```c
+#ifdef CONFIG_IOEXPANDER_BL602_EXPANDER
+//  GPIO Input Pins for BL602 GPIO Expander
+static const gpio_pinset_t bl602_gpio_inputs[] =
+{
+#ifdef BOARD_SX1262_BUSY
+  BOARD_SX1262_BUSY,
+#endif  /* BOARD_SX1262_BUSY */
+...
+};
+
+//  GPIO Output Pins for BL602 GPIO Expander
+static const gpio_pinset_t bl602_gpio_outputs[] =
+{
+#ifdef BOARD_LCD_CS
+  BOARD_LCD_CS,
+#endif  /* BOARD_LCD_CS */
+...
+};
+
+//  GPIO Interrupt Pins for BL602 GPIO Expander
+static const gpio_pinset_t bl602_gpio_interrupts[] =
+{
+#ifdef BOARD_TOUCH_INT
+  BOARD_TOUCH_INT,
+#endif  /* BOARD_TOUCH_INT */
+...
+};
+
+//  Other Pins for BL602 GPIO Expander (For Validation Only)
+static const gpio_pinset_t bl602_other_pins[] =
+{
+#ifdef BOARD_UART_0_RX_PIN
+  BOARD_UART_0_RX_PIN,
+#endif  /* BOARD_UART_0_RX_PIN */
+...
+};
+#endif  /* CONFIG_IOEXPANDER_BL602_EXPANDER */
+```
+
+[(Source)](https://github.com/lupyuen/incubator-nuttx/blob/expander/boards/risc-v/bl602/bl602evb/src/bl602_bringup.c#L126-L222)
+
+At startup, GPIO Expander verifies that the GPIOs are not reused...
+
+```c
+FAR struct ioexpander_dev_s *bl602_expander_initialize(
+  const gpio_pinset_t *gpio_inputs,
+  uint8_t gpio_input_count,
+  const gpio_pinset_t *gpio_outputs,
+  uint8_t gpio_output_count,
+  const gpio_pinset_t *gpio_interrupts,
+  uint8_t gpio_interrupt_count,
+  const gpio_pinset_t *other_pins,
+  uint8_t other_pin_count) {
+  ...
+  //  Mark the GPIOs in use
+  bool gpio_is_used[CONFIG_IOEXPANDER_NPINS];
+  memset(gpio_is_used, 0, sizeof(gpio_is_used));
+
+  //  Validate the GPIO Inputs
+  for (i = 0; i < gpio_input_count; i++) {
+    //  Get GPIO Pinset and GPIO Pin Number
+    gpio_pinset_t pinset = gpio_inputs[i];
+    uint8_t gpio_pin = (pinset & GPIO_PIN_MASK) >> GPIO_PIN_SHIFT;
+
+    //  Check that the GPIO is not in use
+    DEBUGASSERT(gpio_pin < CONFIG_IOEXPANDER_NPINS);
+    if (gpio_is_used[gpio_pin]) {
+      gpioerr("ERROR: GPIO pin %d is already in use\n", gpio_pin);
+      return NULL;
+    }
+    gpio_is_used[gpio_pin] = true;
+  }
+
+  //  Omitted: Validate the GPIO Outputs, GPIO Interrupts and Other Pins
+```
+
+[(Source)](https://github.com/lupyuen/bl602_expander/blob/main/bl602_expander.c#L958-L1123)
+
+In future, GPIO Expander will validate that the SPI / I2C / UART Pin Functions are correctly assigned to the GPIO Pin Numbers...
+
+-   [BL602 Reference Manual (Table 3.1 "Pin Description", Page 26)](https://github.com/bouffalolab/bl_docs/blob/main/BL602_RM/en/BL602_BL604_RM_1.2_en.pdf)
+
+For example: SPI MISO must be either GPIO 0, 4, 8, 12, 16 or 20.
+
+# TODO
+
+TODO
 
 # Test Touch Panel
 
