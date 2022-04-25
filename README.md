@@ -4,6 +4,8 @@
 
 [(Tested on PineDio Stack BL604)](https://lupyuen.github.io/articles/pinedio2)
 
+[__Follow the updates on Twitter__](https://twitter.com/MisterTechBlog/status/1518352162966802432)
+
 See https://lupyuen.github.io/articles/pinedio2#gpio-expander
 
 PineDio Stack BL604 has an interesting problem on Apache NuttX RTOS... Too many GPIOs! Let's make it work.
@@ -118,7 +120,7 @@ nuttx/boards/risc-v/bl602/bl602evb/src/bl602_bringup.c
 
 And call `bl602_expander_initialize` to initialise our driver, just after `bl602_gpio_initialize`:
 
-https://github.com/lupyuen/incubator-nuttx/blob/expander/boards/risc-v/bl602/bl602evb/src/bl602_bringup.c#L646-L754
+https://github.com/lupyuen/incubator-nuttx/blob/expander/boards/risc-v/bl602/bl602evb/src/bl602_bringup.c#L742-L768
 
 ```c
 #ifdef CONFIG_IOEXPANDER_BL602_EXPANDER
@@ -162,6 +164,110 @@ int bl602_bringup(void) {
 #endif /* CONFIG_IOEXPANDER_BL602_EXPANDER */
 ```
 
+All GPIOs are defined listed in `bl602_gpio_inputs` / `outputs` / `interrupts` / `other pins`...
+
+```c
+#ifdef CONFIG_IOEXPANDER_BL602_EXPANDER
+/* GPIO Input Pins for BL602 GPIO Expander */
+
+static const gpio_pinset_t bl602_gpio_inputs[] =
+{
+#ifdef BOARD_SX1262_BUSY
+  BOARD_SX1262_BUSY,
+#endif  /* BOARD_SX1262_BUSY */
+};
+
+/* GPIO Output Pins for BL602 GPIO Expander */
+
+static const gpio_pinset_t bl602_gpio_outputs[] =
+{
+#ifdef BOARD_LCD_CS
+  BOARD_LCD_CS,
+#endif  /* BOARD_LCD_CS */
+#ifdef BOARD_LCD_RST
+  BOARD_LCD_RST,
+#endif  /* BOARD_LCD_RST */
+#ifdef BOARD_LCD_BL
+  BOARD_LCD_BL,
+#endif  /* BOARD_LCD_BL */
+#ifdef BOARD_SX1262_CS
+  BOARD_SX1262_CS,
+#endif  /* BOARD_SX1262_CS */
+#ifdef BOARD_FLASH_CS
+  BOARD_FLASH_CS,
+#endif  /* BOARD_FLASH_CS */
+};
+
+/* GPIO Interrupt Pins for BL602 GPIO Expander */
+
+static const gpio_pinset_t bl602_gpio_interrupts[] =
+{
+#ifdef BOARD_TOUCH_INT
+  BOARD_TOUCH_INT,
+#endif  /* BOARD_TOUCH_INT */
+#ifdef BOARD_BUTTON_INT
+  BOARD_BUTTON_INT,
+#endif  /* BOARD_BUTTON_INT */
+#ifdef BOARD_SX1262_DIO1
+  BOARD_SX1262_DIO1,
+#endif  /* BOARD_SX1262_DIO1 */
+};
+
+/* Other Pins for BL602 GPIO Expander (For Validation Only) */
+
+static const gpio_pinset_t bl602_other_pins[] =
+{
+#ifdef BOARD_UART_0_RX_PIN
+  BOARD_UART_0_RX_PIN,
+#endif  /* BOARD_UART_0_RX_PIN */
+#ifdef BOARD_UART_0_TX_PIN
+  BOARD_UART_0_TX_PIN,
+#endif  /* BOARD_UART_0_TX_PIN */
+#ifdef BOARD_UART_1_RX_PIN
+  BOARD_UART_1_RX_PIN,
+#endif  /* BOARD_UART_1_RX_PIN */
+#ifdef BOARD_UART_1_TX_PIN
+  BOARD_UART_1_TX_PIN,
+#endif  /* BOARD_UART_1_TX_PIN */
+#ifdef BOARD_PWM_CH0_PIN
+  BOARD_PWM_CH0_PIN,
+#endif  /* BOARD_PWM_CH0_PIN */
+#ifdef BOARD_PWM_CH1_PIN
+  BOARD_PWM_CH1_PIN,
+#endif  /* BOARD_PWM_CH1_PIN */
+#ifdef BOARD_PWM_CH2_PIN
+  BOARD_PWM_CH2_PIN,
+#endif  /* BOARD_PWM_CH2_PIN */
+#ifdef BOARD_PWM_CH3_PIN
+  BOARD_PWM_CH3_PIN,
+#endif  /* BOARD_PWM_CH3_PIN */
+#ifdef BOARD_PWM_CH4_PIN
+  BOARD_PWM_CH4_PIN,
+#endif  /* BOARD_PWM_CH4_PIN */
+#ifdef BOARD_I2C_SCL
+  BOARD_I2C_SCL,
+#endif  /* BOARD_I2C_SCL */
+#ifdef BOARD_I2C_SDA
+  BOARD_I2C_SDA,
+#endif  /* BOARD_I2C_SDA */
+#ifdef BOARD_SPI_CS
+  BOARD_SPI_CS,
+#endif  /* BOARD_SPI_CS */
+#ifdef BOARD_SPI_MOSI
+  BOARD_SPI_MOSI,
+#endif  /* BOARD_SPI_MOSI */
+#ifdef BOARD_SPI_MISO
+  BOARD_SPI_MISO,
+#endif  /* BOARD_SPI_MISO */
+#ifdef BOARD_SPI_CLK
+  BOARD_SPI_CLK,
+#endif  /* BOARD_SPI_CLK */
+};
+#endif  /* CONFIG_IOEXPANDER_BL602_EXPANDER */
+```
+
+[(Source)](https://github.com/lupyuen/incubator-nuttx/blob/expander/boards/risc-v/bl602/bl602evb/src/bl602_bringup.c#L126-L222)
+
 We must load the GPIO Expander before other drivers (e.g. CST816S Touch Panel), because GPIO Expander provides GPIO functions for the drivers.
 
 We need to disable BL602 GPIO Driver when we enable GPIO Expander, because GPIO Expander needs GPIO Lower Half which can't coexist with BL602 GPIO Driver:
@@ -179,16 +285,21 @@ We need to disable BL602 GPIO Driver when we enable GPIO Expander, because GPIO 
 To handle the GPIO Interrupt that's triggered when we press the Push Button...
 
 ```c
+#include <nuttx/ioexpander/gpio.h>
+#include <nuttx/ioexpander/bl602_expander.h>
+...
+/* Get the Push Button Pinset and GPIO */
+
 gpio_pinset_t pinset = BOARD_BUTTON_INT;
 uint8_t gpio_pin = (pinset & GPIO_PIN_MASK) >> GPIO_PIN_SHIFT;
 
-/* Configure GPIO interrupt to be triggered on falling edge. */
+/* Configure GPIO interrupt to be triggered on falling edge */
 
 DEBUGASSERT(bl602_expander != NULL);
 IOEXP_SETOPTION(bl602_expander, gpio_pin, IOEXPANDER_OPTION_INTCFG,
                 (FAR void *)IOEXPANDER_VAL_FALLING);
 
-/* Attach GPIO interrupt handler. */
+/* Attach GPIO interrupt handler */
 
 void *handle = IOEP_ATTACH(bl602_expander,
                            (ioe_pinset_t)1 << gpio_pin,
@@ -199,13 +310,12 @@ DEBUGASSERT(handle != NULL);
 
 [(Source)](https://github.com/lupyuen/incubator-nuttx/blob/2982b3a99057c5935ca9150b9f0f1da3565c6061/boards/risc-v/bl602/bl602evb/src/bl602_bringup.c#L696-L704)
 
-`button_isr_handler` is defined as...
+The Button Interrupt Handler `button_isr_handler` is defined as...
 
 ```c
 static int button_isr_handler(FAR struct ioexpander_dev_s *dev,
                               ioe_pinset_t pinset, FAR void *arg)
 {
-  #warning TODO: Move button_isr_handler to Button Handler
   gpioinfo("Button Pressed\n");
   return 0;
 }
@@ -213,7 +323,7 @@ static int button_isr_handler(FAR struct ioexpander_dev_s *dev,
 
 [(Source)](https://github.com/lupyuen/incubator-nuttx/blob/2982b3a99057c5935ca9150b9f0f1da3565c6061/boards/risc-v/bl602/bl602evb/src/bl602_bringup.c#L1038-L1044)
 
-Here's how we created the BL602 GPIO Expander...
+Let's talk about how we created the BL602 GPIO Expander...
 
 # BL602 EVB Limitations
 
@@ -236,6 +346,52 @@ All 23 GPIOs on PineDio Stack #BL604 are wired up! Let's simplify NuttX and name
 -   [PineDio Stack GPIO Assignment](https://lupyuen.github.io/articles/pinedio2#appendix-gpio-assignment)
 
 (So that "/dev/gpioN" will map to BL602 GPIO Pin N)
+
+NuttX lets us create I/O Expander Drivers that will handle many GPIOs (Input / Output / Interrupt). Perfect for PineDio Stack BL604!
+
+Apache NuttX RTOS helpfully provides a Skeleton Driver for I/O Expander. Let's flesh it out for PineDio Stack BL604
+
+-   [Skeleton Driver for I/O Expander](https://github.com/apache/incubator-nuttx/blob/master/drivers/ioexpander/skeleton.c)
+
+# GPIO Interrupts
+
+GPIO Interrupt Handling gets tricky for PineDio Stack BL604: All GPIO Interrupts are multiplexed into a single IRQ. Our GPIO Expander can help. 
+
+Here's the existing code that attaches a BL602 EVB GPIO Interrupt Handler...
+
+```c
+static int gpint_attach(struct gpio_dev_s *dev, pin_interrupt_t callback)
+{
+  struct bl602_gpint_dev_s *bl602xgpint =
+    (struct bl602_gpint_dev_s *)dev;
+
+  uint8_t gpio_pin =
+    (g_gpiointinputs[bl602xgpint->bl602gpio.id] & GPIO_PIN_MASK) >>
+    GPIO_PIN_SHIFT;
+  gpioinfo("Attaching the callback\n");
+
+  /* Make sure the interrupt is disabled */
+
+  bl602xgpint->callback = callback;
+  bl602_gpio_intmask(gpio_pin, 1);
+
+  irq_attach(BL602_IRQ_GPIO_INT0, bl602_gpio_interrupt, dev);
+  bl602_gpio_intmask(gpio_pin, 0);
+
+  gpioinfo("Attach %p\n", callback);
+  return OK;
+}
+```
+
+[(Source)](https://github.com/lupyuen/incubator-nuttx/blob/expander/boards/risc-v/bl602/bl602evb/src/bl602_gpio.c)
+
+Note that all GPIO Interrupts are multiplexed into a single IRQ: `BL602_IRQ_GPIO_INT0`
+
+Our GPIO Expander needs to demultiplex the `BL602_IRQ_GPIO_INT0` IRQ into multiple GPIO Interrupts when handling them.
+
+As noted by Robert Lipe, attaching a BL602 GPIO Interrupt Handler is hard. Let's fix this with our GPIO Expander for Apache NuttX RTOS
+
+-   ["Buttons on BL602 NuttX"](https://www.robertlipe.com/buttons-on-bl602-nuttx/)
 
 TODO
 
