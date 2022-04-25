@@ -371,15 +371,15 @@ Note that all GPIO Interrupts are multiplexed into a single IRQ: `BL602_IRQ_GPIO
 
 When handling GPIO Interrupts, our GPIO Expander needs to demultiplex the `BL602_IRQ_GPIO_INT0` IRQ into multiple GPIO Interrupts.
 
-As noted by Robert Lipe, attaching a BL602 GPIO Interrupt Handler is hard...
+As noted (eloquently) by Robert Lipe, attaching a BL602 GPIO Interrupt Handler is hard (because our stars are misaligned)...
 
 -   ["Buttons on BL602 NuttX"](https://www.robertlipe.com/buttons-on-bl602-nuttx/)
 
-Let's fix this with our GPIO Expander for Apache NuttX RTOS...
+Let's fix this with our GPIO Expander for Apache NuttX RTOS.
 
 ## Push Button Interrupt
 
-To handle the GPIO Interrupt that's triggered when we press the Push Button on PineDio Stack...
+Now With BL602 GPIO Expander, here's how we handle the GPIO Interrupt that's triggered when we press the Push Button on PineDio Stack...
 
 ```c
 #include <nuttx/ioexpander/gpio.h>
@@ -425,7 +425,7 @@ Note that the Button Interrupt Handler runs in the context of the Interrupt Hand
 
 ## Touch Panel Interrupt
 
-The CST816S Driver for PineDio Stack's Touch Panel now calls GPIO Expander to attach the GPIO Interrupt Handler...
+The CST816S Driver for PineDio Stack's Touch Panel now calls BL602 GPIO Expander to attach the GPIO Interrupt Handler...
 
 ```c
 //  Register the CST816S device (e.g. /dev/input0)
@@ -494,7 +494,7 @@ static int init_gpio(void) {
 
 [(Source)](https://github.com/lupyuen/lora-sx1262/blob/lorawan/src/sx126x-nuttx.c#L759-L815)
 
-This code calls `ioctl()` in the User Space (instead of Kernel Space), so it works OK with GPIO Expander without modification.
+This code calls `ioctl()` in the User Space (instead of Kernel Space), so it works OK with BL602 GPIO Expander without modification.
 
 For PineDio Stack, we changed the definition of `DIO1_DEVPATH` to "/dev/gpio19"...
 
