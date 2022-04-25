@@ -404,18 +404,18 @@ int cst816s_register(FAR const char *devpath, FAR struct i2c_master_s *i2c_dev, 
   //  Configure GPIO interrupt to be triggered on falling edge
   DEBUGASSERT(bl602_expander != NULL);
   IOEXP_SETOPTION(
-    bl602_expander, 
-    gpio_pin, 
-    IOEXPANDER_OPTION_INTCFG,
-    (FAR void *) IOEXPANDER_VAL_FALLING
+    bl602_expander,  //  BL602 GPIO Expander
+    gpio_pin,        //  GPIO Pin
+    IOEXPANDER_OPTION_INTCFG,            //  Configure interrupt trigger
+    (FAR void *) IOEXPANDER_VAL_FALLING  //  Trigger on falling edge
   );
 
   //  Attach GPIO interrupt handler
   handle = IOEP_ATTACH(
-    bl602_expander,
-    (ioe_pinset_t) 1 << gpio_pin,
-    cst816s_isr_handler,
-    priv
+    bl602_expander,                //  BL602 GPIO Expander
+    (ioe_pinset_t) 1 << gpio_pin,  //  GPIO Pin converted to Pinset
+    cst816s_isr_handler,  //  GPIO Interrupt Handler
+    priv                  //  Callback argument
   );
   if (handle == NULL) {
     kmm_free(priv);
@@ -426,11 +426,68 @@ int cst816s_register(FAR const char *devpath, FAR struct i2c_master_s *i2c_dev, 
 
 [(Source)](https://github.com/lupyuen/cst816s-nuttx/blob/expander/cst816s.c#L661-L678)
 
-TODO
+The functions for configuring and handling GPIO Interrupts have been moved from the CST816S Driver to BL602 GPIO Expander.
+
+[(See this)](https://github.com/lupyuen/bl602_expander/blob/main/bl602_expander.c#L164-L325)
 
 ## LoRa SX1262 Interrupt
 
-TODO
+The Semtech SX1262 LoRa Transceiver on PineDio Stack triggers a GPIO Interrupt (on pin DIO1) when a LoRa packet is transmitted or received.
+
+Here's the existing code that configures the GPIO Interrupt and attaches the Interrupt Handler...
+
+```c
+/// Init the GPIO Pins. Return 0 on success.
+static int init_gpio(void) {
+  ...
+  //  Open GPIO Interrupt for SX1262 DIO1 Pin
+  dio1 = open(DIO1_DEVPATH, O_RDWR);
+  assert(dio1 > 0);
+
+  //  Get SX1262 DIO1 Pin Type
+  ret = ioctl(dio1, GPIOC_PINTYPE, (unsigned long)((uintptr_t)&pintype));
+  assert(ret >= 0);
+
+  //  Verify that SX1262 DIO1 Pin is GPIO Interrupt (not GPIO Input or GPIO Output)
+  assert(pintype == GPIO_INTERRUPT_PIN);
+
+  //  Change DIO1 Pin to Trigger GPIO Interrupt on Rising Edge
+  //  TODO: Crashes at ioexpander/gpio.c (line 544) because change failed apparently
+  ret = ioctl(dio1, GPIOC_SETPINTYPE, (unsigned long) GPIO_INTERRUPT_RISING_PIN);
+  assert(ret >= 0);
+  ...
+  //  Start the Background Thread to process DIO1 interrupts
+  static pthread_t thread;
+  ret = pthread_create(&thread, &attr, process_dio1, 0);
+  assert(ret == 0);
+```
+
+[(Source)](https://github.com/lupyuen/lora-sx1262/blob/lorawan/src/sx126x-nuttx.c#L759-L815)
+
+This code calls `ioctl()`, so it works OK with GPIO Expander without modification.
+
+For PineDio Stack, we changed the definition of `DIO1_DEVPATH` to "/dev/gpio19"...
+
+```text
+CONFIG_LIBSX1262_SPI_DEVPATH="/dev/spitest0"
+CONFIG_LIBSX1262_CS_DEVPATH="/dev/gpio15"
+CONFIG_LIBSX1262_BUSY_DEVPATH="/dev/gpio10"
+CONFIG_LIBSX1262_DIO1_DEVPATH="/dev/gpio19"
+```
+
+[(Source)](https://github.com/lupyuen/incubator-nuttx/blob/expander/boards/risc-v/bl602/bl602evb/configs/pinedio/defconfig#L1141-L1144)
+
+For backward compatibility with BL602, we default `DIO1_DEVPATH` to "/dev/gpio2" if `DIO1_DEVPATH` isn't configured...
+
+```c
+#ifdef CONFIG_LIBSX1262_DIO1_DEVPATH
+#define DIO1_DEVPATH CONFIG_LIBSX1262_DIO1_DEVPATH
+#else
+#define DIO1_DEVPATH "/dev/gpio2"
+#endif  //  CONFIG_LIBSX1262_DIO1_DEVPATH
+```
+
+[(Source)](https://github.com/lupyuen/lora-sx1262/blob/lorawan/src/sx126x-nuttx.c#L40-L44)
 
 # Check Reused GPIOs
 
