@@ -627,6 +627,8 @@ FAR struct ioexpander_dev_s *bl602_expander_initialize(
 
 [(Source)](https://github.com/lupyuen/bl602_expander/blob/main/bl602_expander.c#L958-L1123)
 
+# Validate Pin Functions
+
 In future, our BL602 GPIO Expander will validate that the SPI / I2C / UART Pin Functions are correctly assigned to the GPIO Pin Numbers...
 
 -   [BL602 Reference Manual (Table 3.1 "Pin Description", Page 26)](https://github.com/bouffalolab/bl_docs/blob/main/BL602_RM/en/BL602_BL604_RM_1.2_en.pdf)
