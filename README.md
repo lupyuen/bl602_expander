@@ -361,11 +361,16 @@ uint8_t gpio_pin = (pinset & GPIO_PIN_MASK) >> GPIO_PIN_SHIFT;
 
 //  Configure GPIO interrupt to be triggered on falling edge
 DEBUGASSERT(bl602_expander != NULL);
-IOEXP_SETOPTION(bl602_expander, gpio_pin, IOEXPANDER_OPTION_INTCFG,
-  (FAR void *) IOEXPANDER_VAL_FALLING);
+IOEXP_SETOPTION(
+  bl602_expander,  //  BL602 GPIO Expander
+  gpio_pin,        //  GPIO Pin
+  IOEXPANDER_OPTION_INTCFG,            //  Configure interrupt trigger
+  (FAR void *) IOEXPANDER_VAL_FALLING  //  Trigger on falling edge
+);
 
 //  Attach GPIO interrupt handler
-void *handle = IOEP_ATTACH(bl602_expander,
+void *handle = IOEP_ATTACH(
+  bl602_expander,                //  BL602 GPIO Expander
   (ioe_pinset_t) 1 << gpio_pin,  //  GPIO Pin converted to Pinset
   button_isr_handler,            //  GPIO Interrupt Handler
   NULL                           //  TODO: Set the callback argument
@@ -396,32 +401,34 @@ The CST816S Driver for PineDio Stack's Touch Panel now calls GPIO Expander to at
 //  Register the CST816S device (e.g. /dev/input0)
 int cst816s_register(FAR const char *devpath, FAR struct i2c_master_s *i2c_dev, uint8_t i2c_devaddr) {
   ...
-
-  /* Configure GPIO interrupt to be triggered on falling edge. */
-
+  //  Configure GPIO interrupt to be triggered on falling edge
   DEBUGASSERT(bl602_expander != NULL);
-  IOEXP_SETOPTION(bl602_expander, gpio_pin, IOEXPANDER_OPTION_INTCFG,
-                  (FAR void *)IOEXPANDER_VAL_FALLING);
+  IOEXP_SETOPTION(
+    bl602_expander, 
+    gpio_pin, 
+    IOEXPANDER_OPTION_INTCFG,
+    (FAR void *) IOEXPANDER_VAL_FALLING
+  );
 
-  /* Attach GPIO interrupt handler. */
-
-  handle = IOEP_ATTACH(bl602_expander,
-                       (ioe_pinset_t)1 << gpio_pin,
-                       cst816s_isr_handler,
-                       priv);
-  if (handle == NULL)
-    {
-      kmm_free(priv);
-      ierr("Attach interrupt failed\n");
-      return ret;
-    }
+  //  Attach GPIO interrupt handler
+  handle = IOEP_ATTACH(
+    bl602_expander,
+    (ioe_pinset_t) 1 << gpio_pin,
+    cst816s_isr_handler,
+    priv
+  );
+  if (handle == NULL) {
+    kmm_free(priv);
+    ierr("Attach interrupt failed\n");
+    return -EIO;
+  }
 ```
 
 [(Source)](https://github.com/lupyuen/cst816s-nuttx/blob/expander/cst816s.c#L661-L678)
 
 TODO
 
-## LoRa SX1262 DIO1 Interrupt
+## LoRa SX1262 Interrupt
 
 TODO
 
