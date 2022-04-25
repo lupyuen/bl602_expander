@@ -643,7 +643,7 @@ Any other GPIO Pin for SPI MISO will be disallowed by our BL602 GPIO Expander. (
 
 # Configure GPIO
 
-At startup our BL602 GPIO Expander configures the GPIO Input / Output / Interrupt Pins by calling `bl602_configgpio` and `gpio_lower_half`...
+At startup our BL602 GPIO Expander configures the GPIO Input / Output / Interrupt Pins by calling [`bl602_configgpio`](https://github.com/lupyuen/incubator-nuttx/blob/pinedio/arch/risc-v/src/bl602/bl602_gpio.c#L58-L140) and `gpio_lower_half` (which registers "/dev/gpioN")...
 
 ```c
 //  Initialise the BL602 GPIO Expander
@@ -809,7 +809,95 @@ FAR struct ioexpander_dev_s *bl602_expander_initialize(
 
 [(Source)](https://github.com/lupyuen/bl602_expander/blob/main/bl602_expander.c#L956-L1121)
 
-TODO
+[(`bl602_expander_intmask` is defined here)](https://github.com/lupyuen/bl602_expander/blob/main/bl602_expander.c#L164-L197)
+
+[(`bl602_expander_irq_enable` is defined here)](https://github.com/lupyuen/bl602_expander/blob/main/bl602_expander.c#L301-L325)
+
+# Set GPIO Options
+
+This is how we set the GPIO Options...
+
+```c
+//  Set GPIO Options
+static int bl602_expander_option(FAR struct ioexpander_dev_s *dev, uint8_t pin,
+                       int opt, FAR void *value)
+{
+  FAR struct bl602_expander_dev_s *priv = (FAR struct bl602_expander_dev_s *)dev;
+  int ret = -ENOSYS;
+
+  gpioinfo("pin=%u, option=%u, value=%p\n", pin, opt, value);
+
+  DEBUGASSERT(priv != NULL);
+
+  /* Get exclusive access to the I/O Expander */
+
+  ret = bl602_expander_lock(priv);
+  if (ret < 0)
+    {
+      return ret;
+    }
+
+  /* Handle each option */
+
+  switch(opt)
+    {
+      case IOEXPANDER_OPTION_INTCFG: /* Interrupt Trigger */
+        {
+          switch((uint32_t)value)
+            {
+              case IOEXPANDER_VAL_RISING: /* Rising Edge */
+                {
+                  gpioinfo("Rising edge: pin=%u\n", pin);
+                  bl602_expander_set_intmod(pin, 1, GLB_GPIO_INT_TRIG_POS_PULSE);
+                  break;
+                }
+
+              case IOEXPANDER_VAL_FALLING: /* Falling Edge */
+                {
+                  gpioinfo("Falling edge: pin=%u\n", pin);
+                  bl602_expander_set_intmod(pin, 1, GLB_GPIO_INT_TRIG_NEG_PULSE);
+                  break;
+                }
+
+              case IOEXPANDER_VAL_BOTH: /* Both Edge (Unimplemented) */
+                {
+                  gpioinfo("WARNING: Unimplemented interrupt both edge: pin=%u\n", pin);
+                  break;
+                }
+
+              case IOEXPANDER_VAL_DISABLE: /* Disable (Unimplemented) */
+                {
+                  gpioinfo("WARNING: Unimplemented disable interrupt, use detach instead: pin=%u\n", pin);
+                  break;
+                }
+
+              default: /* Unsupported Interrupt */
+                {
+                  gpioerr("ERROR: Unsupported interrupt: %d, pin=%u\n", value, pin);
+                  ret = -EINVAL;
+                  break;
+                }
+            }
+          break;
+        }
+
+      default: /* Unsupported Option */
+        {
+          gpioerr("ERROR: Unsupported option: %d, pin=%u\n", opt, pin);
+          ret = -ENOSYS;
+        }
+    }
+
+  /* Unlock the I/O Expander */
+
+  bl602_expander_unlock(priv);
+  return ret;
+}
+```
+
+[(Source)](https://github.com/lupyuen/bl602_expander/blob/main/bl602_expander.c#L456-L548)
+
+[(`bl602_expander_set_intmod` is defined here)](https://github.com/lupyuen/bl602_expander/blob/main/bl602_expander.c#L198-L246)
 
 # Read GPIO
 
@@ -849,7 +937,7 @@ static int bl602_expander_readpin(FAR struct ioexpander_dev_s *dev,
 
 [(Source)](https://github.com/lupyuen/bl602_expander/blob/main/bl602_expander.c#L596-L642)
 
-TODO
+[(`bl602_gpioread` comes from the BL602 GPIO Driver)](https://github.com/lupyuen/incubator-nuttx/blob/pinedio/arch/risc-v/src/bl602/bl602_gpio.c#L218-L230)
 
 # Write GPIO
 
@@ -889,7 +977,7 @@ static int bl602_expander_writepin(FAR struct ioexpander_dev_s *dev,
 
 [(Source)](https://github.com/lupyuen/bl602_expander/blob/main/bl602_expander.c#L550-L594)
 
-TODO
+[(`bl602_gpiowrite` comes from the BL602 GPIO Driver)](https://github.com/lupyuen/incubator-nuttx/blob/pinedio/arch/risc-v/src/bl602/bl602_gpio.c#L197-L216)
 
 # Attach GPIO Interrupt
 
@@ -975,7 +1063,7 @@ static FAR void *bl602_expander_attach(FAR struct ioexpander_dev_s *dev,
 
 [(Source)](https://github.com/lupyuen/bl602_expander/blob/main/bl602_expander.c#L814-L906)
 
-TODO
+[(`bl602_expander_intmask` is defined here)](https://github.com/lupyuen/bl602_expander/blob/main/bl602_expander.c#L164-L197)
 
 # Detach GPIO Interrupt
 
@@ -1014,6 +1102,8 @@ static int bl602_expander_detach(FAR struct ioexpander_dev_s *dev, FAR void *han
 ```
 
 [(Source)](https://github.com/lupyuen/bl602_expander/blob/main/bl602_expander.c#L908-L950)
+
+[(`bl602_expander_intmask` is defined here)](https://github.com/lupyuen/bl602_expander/blob/main/bl602_expander.c#L164-L197)
 
 TODO
 
@@ -1085,6 +1175,10 @@ static int bl602_expander_interrupt(int irq, void *context, void *arg)
 ```
 
 [(Source)](https://github.com/lupyuen/bl602_expander/blob/main/bl602_expander.c#L327-L393)
+
+[(`bl602_expander_intclear` is defined here)](https://github.com/lupyuen/bl602_expander/blob/main/bl602_expander.c#L275-L300)
+
+[(`bl602_expander_get_intstatus` is defined here)](https://github.com/lupyuen/bl602_expander/blob/main/bl602_expander.c#L247-L274)
 
 TODO
 
