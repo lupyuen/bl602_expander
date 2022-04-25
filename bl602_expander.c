@@ -447,8 +447,6 @@ static int bl602_expander_direction(FAR struct ioexpander_dev_s *dev, uint8_t pi
       return ret;
     }
 
-  /* TODO: Set the pin direction in the I/O Expander */
-
   /* Unlock the I/O Expander */
 
   bl602_expander_unlock(priv);
