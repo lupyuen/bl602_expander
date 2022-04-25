@@ -305,6 +305,34 @@ Other microcontrollers might also need a GPIO Expander. Like CH32V307, which has
 
 [(See this)](https://github.com/openwch/ch32v307)
 
+## GPIO Expander Operations
+
+Our NuttX GPIO Expander implements the operations to: 1️⃣ Config / Read / Write GPIOs 2️⃣ Attach / Detach GPIO Interrupt Handlers...
+
+```c
+/* I/O Expander Operations */
+
+static const struct ioexpander_ops_s g_bl602_expander_ops =
+{
+  bl602_expander_direction,
+  bl602_expander_option,
+  bl602_expander_writepin,
+  bl602_expander_readpin,
+  bl602_expander_readbuf
+#ifdef CONFIG_IOEXPANDER_MULTIPIN
+  , bl602_expander_multiwritepin
+  , bl602_expander_multireadpin
+  , bl602_expander_multireadbuf
+#endif
+#ifdef CONFIG_IOEXPANDER_INT_ENABLE
+  , bl602_expander_attach
+  , bl602_expander_detach
+#endif
+};
+```
+
+[(Source)](https://github.com/lupyuen/bl602_expander/blob/main/bl602_expander.c#L141-L159)
+
 # GPIO Interrupts
 
 GPIO Interrupt Handling gets tricky for PineDio Stack BL604: All GPIO Interrupts are multiplexed into a single IRQ. Our GPIO Expander can help. 
