@@ -138,7 +138,7 @@ static int bl602_expander_detach(FAR struct ioexpander_dev_s *dev,
 static struct bl602_expander_dev_s g_skel;
 #endif
 
-/* I/O expander vtable */
+/* I/O Expander Operations */
 
 static const struct ioexpander_ops_s g_bl602_expander_ops =
 {
