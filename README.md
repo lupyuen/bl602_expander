@@ -224,7 +224,7 @@ We need to disable BL602 GPIO Driver when we enable GPIO Expander, because GPIO 
 
 [(Source)](https://github.com/lupyuen/incubator-nuttx/blob/expander/boards/risc-v/bl602/bl602evb/src/bl602_bringup.c#L646-L653)
 
-# Push Button Interrupt
+## Push Button Interrupt
 
 To handle the GPIO Interrupt that's triggered when we press the Push Button...
 
@@ -250,7 +250,7 @@ void *handle = IOEP_ATTACH(bl602_expander,
                            button_isr_handler,
                            NULL);  //  TODO: Set the callback argument
 DEBUGASSERT(handle != NULL);
-```c
+```
 
 [(Source)](https://github.com/lupyuen/incubator-nuttx/blob/2982b3a99057c5935ca9150b9f0f1da3565c6061/boards/risc-v/bl602/bl602evb/src/bl602_bringup.c#L696-L704)
 
@@ -309,7 +309,7 @@ Other microcontrollers might also need a GPIO Expander. Like CH32V307, which has
 
 ## GPIO Expander Operations
 
-Our NuttX GPIO Expander implements the operations to: 1️⃣ Config / Read / Write GPIOs 2️⃣ Attach / Detach GPIO Interrupt Handlers...
+Our NuttX GPIO Expander implements the operations to: 1️⃣ Config / Read / Write GPIOs 2️⃣ Attach / Detach GPIO Interrupt Handlers 3️⃣ Handle GPIO Interrupts...
 
 ```c
 /* I/O Expander Operations */
@@ -334,6 +334,8 @@ static const struct ioexpander_ops_s g_bl602_expander_ops =
 ```
 
 [(Source)](https://github.com/lupyuen/bl602_expander/blob/main/bl602_expander.c#L141-L159)
+
+We'll cover these operations below.
 
 # GPIO Interrupts
 
@@ -496,6 +498,8 @@ static int init_gpio(void) {
 
 This code calls `ioctl()` in the User Space (instead of Kernel Space), so it works OK with BL602 GPIO Expander without modification.
 
+(Because `ioctl()` calls the GPIO Lower Half Driver, which is integrated with our BL602 GPIO Expander)
+
 For PineDio Stack, we changed the definition of `DIO1_DEVPATH` to "/dev/gpio19"...
 
 ```text
@@ -642,14 +646,7 @@ Any other GPIO Pin for SPI MISO will be disallowed by our BL602 GPIO Expander. (
 At startup our BL602 GPIO Expander configures the GPIO Input / Output / Interrupt Pins by calling `bl602_configgpio` and `gpio_lower_half`...
 
 ```c
-/****************************************************************************
- * Name: bl602_expander_initialize
- *
- * Description:
- *   Initialize a I/O Expander device.
- *
- ****************************************************************************/
-
+//  Initialise the BL602 GPIO Expander
 FAR struct ioexpander_dev_s *bl602_expander_initialize(
   const gpio_pinset_t *gpio_inputs,
   uint8_t gpio_input_count,
@@ -819,25 +816,7 @@ TODO
 This is how our BL602 GPIO Expander reads GPIO Inputs...
 
 ```c
-/****************************************************************************
- * Name: bl602_expander_readpin
- *
- * Description:
- *   Read the actual PIN level. This can be different from the last value
- *   written to this pin. Required.
- *
- * Input Parameters:
- *   dev    - Device-specific state data
- *   pin    - The index of the pin
- *   valptr - Pointer to a buffer where the pin level is stored. Usually TRUE
- *            if the pin is high, except if OPTION_INVERT has been set on
- *            this pin.
- *
- * Returned Value:
- *   0 on success, else a negative error code
- *
- ****************************************************************************/
-
+//  Read the GPIO Input Pin
 static int bl602_expander_readpin(FAR struct ioexpander_dev_s *dev, 
                                   uint8_t pin,
                                   FAR bool *value)
@@ -877,23 +856,7 @@ TODO
 This is how our BL602 GPIO Expander writes to GPIO Output Pins...
 
 ```c
-/****************************************************************************
- * Name: bl602_expander_writepin
- *
- * Description:
- *   Set the pin level. Required.
- *
- * Input Parameters:
- *   dev - Device-specific state data
- *   pin - The index of the pin to alter in this call
- *   val - The pin level. Usually TRUE will set the pin high,
- *         except if OPTION_INVERT has been set on this pin.
- *
- * Returned Value:
- *   0 on success, else a negative error code
- *
- ****************************************************************************/
-
+//  Write to the GPIO Output Pin
 static int bl602_expander_writepin(FAR struct ioexpander_dev_s *dev,
                                    uint8_t pin,
                                    bool value)
@@ -933,25 +896,7 @@ TODO
 Here's how our BL602 GPIO Expander attaches a GPIO Interrupt Handler...
 
 ```c
-/****************************************************************************
- * Name: bl602_expander_attach
- *
- * Description:
- *   Attach a pin interrupt callback function.
- *
- * Input Parameters:
- *   dev      - Device-specific state data
- *   pinset   - The set of pin events that will generate the callback
- *   callback - The pointer to callback function.  NULL will detach the
- *              callback. NOTE: Callback will run in the context of
- *              Interrupt Handler.
- *   arg      - Argument that will be provided to the callback function
- *
- * Returned Value:
- *   Callback Handle on success, else NULL
- *
- ****************************************************************************/
-
+//  Attach a Callback Function to a GPIO Interrupt
 #ifdef CONFIG_IOEXPANDER_INT_ENABLE
 static FAR void *bl602_expander_attach(FAR struct ioexpander_dev_s *dev,
                        ioe_pinset_t pinset,
@@ -1037,21 +982,7 @@ TODO
 Here's how our BL602 GPIO Expander detaches a GPIO Interrupt Handler...
 
 ```c
-/****************************************************************************
- * Name: bl602_expander_detach
- *
- * Description:
- *   Detach and disable a pin interrupt callback function.
- *
- * Input Parameters:
- *   dev      - Device-specific state data
- *   handle   - The non-NULL opaque value return by bl602_expander_attach_attch()
- *
- * Returned Value:
- *   0 on success, else a negative error code
- *
- ****************************************************************************/
-
+//  Detach and disable a GPIO Interrupt
 #ifdef CONFIG_IOEXPANDER_INT_ENABLE
 static int bl602_expander_detach(FAR struct ioexpander_dev_s *dev, FAR void *handle)
 {
@@ -1091,15 +1022,8 @@ TODO
 Here's how our BL602 GPIO Expander handles a GPIO Interrupt...
 
 ```c
-/****************************************************************************
- * Name: bl602_expander_interrupt
- *
- * Description:
- *   Handle GPIO Interrupt. Based on
- *   https://github.com/apache/incubator-nuttx/blob/master/boards/risc-v/bl602/bl602evb/src/bl602_gpio.c#L256-L304
- *
- ****************************************************************************/
-
+//  Handle GPIO Interrupt. Based on
+//  https://github.com/apache/incubator-nuttx/blob/master/boards/risc-v/bl602/bl602evb/src/bl602_gpio.c#L256-L304
 static int bl602_expander_interrupt(int irq, void *context, void *arg)
 {
   FAR struct bl602_expander_dev_s *priv = (FAR struct bl602_expander_dev_s *)arg;
