@@ -1026,7 +1026,7 @@ static FAR void *bl602_expander_attach(FAR struct ioexpander_dev_s *dev,
 #endif
 ```
 
-[(Source)]()
+[(Source)](https://github.com/lupyuen/bl602_expander/blob/main/bl602_expander.c#L814-L906)
 
 TODO
 
@@ -1080,7 +1080,7 @@ static int bl602_expander_detach(FAR struct ioexpander_dev_s *dev, FAR void *han
 #endif
 ```
 
-[(Source)]()
+[(Source)](https://github.com/lupyuen/bl602_expander/blob/main/bl602_expander.c#L908-L950)
 
 TODO
 
@@ -1157,7 +1157,8 @@ static int bl602_expander_interrupt(int irq, void *context, void *arg)
   return OK;
 }
 ```
-[(Source)]()
+
+[(Source)](https://github.com/lupyuen/bl602_expander/blob/main/bl602_expander.c#L327-L393)
 
 TODO
 
