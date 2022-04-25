@@ -297,7 +297,7 @@ Easier for devs to create new NuttX Drivers!
 
 NuttX lets us create I/O Expander Drivers that will handle many GPIOs (Input / Output / Interrupt). Perfect for PineDio Stack BL604!
 
--   [NuttX I/O Expander Interface](https://github.com/apache/incubator-nuttx/blob/master/include/nuttx/ioexpander/ioexpander.h)
+-   [NuttX I/O Expander Driver Interface](https://github.com/apache/incubator-nuttx/blob/master/include/nuttx/ioexpander/ioexpander.h)
 
 Apache NuttX RTOS helpfully provides a Skeleton Driver for I/O Expander. Let's flesh it out for PineDio Stack BL604's GPIO Expander...
 
@@ -494,7 +494,7 @@ static int init_gpio(void) {
 
 [(Source)](https://github.com/lupyuen/lora-sx1262/blob/lorawan/src/sx126x-nuttx.c#L759-L815)
 
-This code calls `ioctl()`, so it works OK with GPIO Expander without modification.
+This code calls `ioctl()` in the User Space (instead of Kernel Space), so it works OK with GPIO Expander without modification.
 
 For PineDio Stack, we changed the definition of `DIO1_DEVPATH` to "/dev/gpio19"...
 
@@ -521,7 +521,7 @@ For backward compatibility with BL602, we default `DIO1_DEVPATH` to "/dev/gpio2"
 
 # Check Reused GPIOs
 
-Tracking all 23 GPIOs used by PineDio Stack BL604 can get challenging... We might reuse GPIOs by mistake! Our NuttX GPIO Expander shall validate the GPIOs at startup.
+Tracking all 23 GPIOs used by PineDio Stack BL604 can get challenging... We might reuse GPIOs by mistake! Our BL602 GPIO Expander shall validate the GPIOs at startup.
 
 Here are the GPIOs currently defined for PineDio Stack...
 
@@ -627,13 +627,31 @@ FAR struct ioexpander_dev_s *bl602_expander_initialize(
 
 [(Source)](https://github.com/lupyuen/bl602_expander/blob/main/bl602_expander.c#L958-L1123)
 
-In future, GPIO Expander will validate that the SPI / I2C / UART Pin Functions are correctly assigned to the GPIO Pin Numbers...
+In future, our BL602 GPIO Expander will validate that the SPI / I2C / UART Pin Functions are correctly assigned to the GPIO Pin Numbers...
 
 -   [BL602 Reference Manual (Table 3.1 "Pin Description", Page 26)](https://github.com/bouffalolab/bl_docs/blob/main/BL602_RM/en/BL602_BL604_RM_1.2_en.pdf)
 
 For example: SPI MISO must be either GPIO 0, 4, 8, 12, 16 or 20.
 
-# TODO
+Any other GPIO Pin for SPI MISO will be disallowed by our BL602 GPIO Expander. (And fail at startup)
+
+# Configure GPIO
+
+TODO
+
+# Read GPIO
+
+TODO
+
+# Write GPIO
+
+TODO
+
+# Attach GPIO Interrupt
+
+TODO
+
+# Handle GPIO Interrupt
 
 TODO
 
