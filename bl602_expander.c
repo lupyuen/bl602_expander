@@ -906,7 +906,7 @@ static FAR void *bl602_expander_attach(FAR struct ioexpander_dev_s *dev,
 #endif
 
 /****************************************************************************
- * Name: bl602_expander_detach_detach
+ * Name: bl602_expander_detach
  *
  * Description:
  *   Detach and disable a pin interrupt callback function.
