@@ -291,13 +291,19 @@ All 23 GPIOs on PineDio Stack BL604 are wired up. Let's simplify NuttX and name 
 
 (So that "/dev/gpioN" will map to BL602 GPIO Pin N)
 
+Easier for devs to create new NuttX Drivers!
+
 # GPIO Expander
 
 NuttX lets us create I/O Expander Drivers that will handle many GPIOs (Input / Output / Interrupt). Perfect for PineDio Stack BL604!
 
-Apache NuttX RTOS helpfully provides a Skeleton Driver for I/O Expander. Let's flesh it out for PineDio Stack BL604
+Apache NuttX RTOS helpfully provides a Skeleton Driver for I/O Expander. Let's flesh it out for PineDio Stack BL604's GPIO Expander...
 
 -   [Skeleton Driver for I/O Expander](https://github.com/apache/incubator-nuttx/blob/master/drivers/ioexpander/skeleton.c)
+
+Other microcontrollers might also need a GPIO Expander. Like CH32V307, which has 80 GPIOs (!)
+
+[(See this)](https://github.com/openwch/ch32v307)
 
 # GPIO Interrupts
 
@@ -335,9 +341,50 @@ Note that all GPIO Interrupts are multiplexed into a single IRQ: `BL602_IRQ_GPIO
 
 When handling GPIO Interrupts, our GPIO Expander needs to demultiplex the `BL602_IRQ_GPIO_INT0` IRQ into multiple GPIO Interrupts.
 
-As noted by Robert Lipe, attaching a BL602 GPIO Interrupt Handler is hard. Let's fix this with our GPIO Expander for Apache NuttX RTOS
+As noted by Robert Lipe, attaching a BL602 GPIO Interrupt Handler is hard...
 
 -   ["Buttons on BL602 NuttX"](https://www.robertlipe.com/buttons-on-bl602-nuttx/)
+
+Let's fix this with our GPIO Expander for Apache NuttX RTOS...
+
+To handle the GPIO Interrupt that's triggered when we press the Push Button...
+
+```c
+#include <nuttx/ioexpander/gpio.h>
+#include <nuttx/ioexpander/bl602_expander.h>
+...
+//  Get the Push Button Pinset and GPIO
+gpio_pinset_t pinset = BOARD_BUTTON_INT;
+uint8_t gpio_pin = (pinset & GPIO_PIN_MASK) >> GPIO_PIN_SHIFT;
+
+//  Configure GPIO interrupt to be triggered on falling edge
+DEBUGASSERT(bl602_expander != NULL);
+IOEXP_SETOPTION(bl602_expander, gpio_pin, IOEXPANDER_OPTION_INTCFG,
+  (FAR void *) IOEXPANDER_VAL_FALLING);
+
+//  Attach GPIO interrupt handler
+void *handle = IOEP_ATTACH(bl602_expander,
+  (ioe_pinset_t) 1 << gpio_pin,  //  GPIO Pin converted to Pinset
+  button_isr_handler,            //  GPIO Interrupt Handler
+  NULL                           //  TODO: Set the callback argument
+);
+DEBUGASSERT(handle != NULL);
+```c
+
+[(Source)](https://github.com/lupyuen/incubator-nuttx/blob/2982b3a99057c5935ca9150b9f0f1da3565c6061/boards/risc-v/bl602/bl602evb/src/bl602_bringup.c#L696-L704)
+
+Much easier now! The Button Interrupt Handler `button_isr_handler` is defined as...
+
+```c
+static int button_isr_handler(FAR struct ioexpander_dev_s *dev, ioe_pinset_t pinset, FAR void *arg) {
+  gpioinfo("Button Pressed\n");
+  return 0;
+}
+```
+
+[(Source)](https://github.com/lupyuen/incubator-nuttx/blob/2982b3a99057c5935ca9150b9f0f1da3565c6061/boards/risc-v/bl602/bl602evb/src/bl602_bringup.c#L1038-L1044)
+
+Note that the Button Interrupt Handler runs in the context of the Interrupt Handler. Be careful!
 
 # Check Reused GPIOs
 
@@ -418,14 +465,10 @@ At startup, GPIO Expander verifies that the GPIOs are not reused...
 
 ```c
 FAR struct ioexpander_dev_s *bl602_expander_initialize(
-  const gpio_pinset_t *gpio_inputs,
-  uint8_t gpio_input_count,
-  const gpio_pinset_t *gpio_outputs,
-  uint8_t gpio_output_count,
-  const gpio_pinset_t *gpio_interrupts,
-  uint8_t gpio_interrupt_count,
-  const gpio_pinset_t *other_pins,
-  uint8_t other_pin_count) {
+  const gpio_pinset_t *gpio_inputs,     uint8_t gpio_input_count,
+  const gpio_pinset_t *gpio_outputs,    uint8_t gpio_output_count,
+  const gpio_pinset_t *gpio_interrupts, uint8_t gpio_interrupt_count,
+  const gpio_pinset_t *other_pins,      uint8_t other_pin_count) {
   ...
   //  Mark the GPIOs in use
   bool gpio_is_used[CONFIG_IOEXPANDER_NPINS];
