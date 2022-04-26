@@ -737,7 +737,38 @@ The macros are simple passthroughs...
 #define CS_MOSI_MISO_CLK(cs, mosi, miso, clk) cs, mosi, miso, clk
 ```
 
-Will devs accept this? Lemme know what you think!
+At startup, GPIO Expander iterates through the pins and discovers that `BOARD_SPI_MISO` is the third pin (MISO) of the SPI Function Group. So it verifies that it's either GPIO 0, 4, 8, 12, 16 or 20.
+
+Are devs OK with this? Lemme know what you think!
+
+_Can we validate the Pin Functions at compile-time?_
+
+Possibly. We can enumerate all valid combinations of Pin Functions and Pin Numbers...
+
+```c
+//  MISO can be either GPIO 0, 4, 8, 12, 16 or 20
+#define SPI_MISO_PIN0  (GPIO_INPUT | GPIO_PULLUP | GPIO_FUNC_SPI | GPIO_PIN0)
+#define SPI_MISO_PIN4  (GPIO_INPUT | GPIO_PULLUP | GPIO_FUNC_SPI | GPIO_PIN4)
+#define SPI_MISO_PIN8  (GPIO_INPUT | GPIO_PULLUP | GPIO_FUNC_SPI | GPIO_PIN8)
+#define SPI_MISO_PIN12 (GPIO_INPUT | GPIO_PULLUP | GPIO_FUNC_SPI | GPIO_PIN12)
+#define SPI_MISO_PIN16 (GPIO_INPUT | GPIO_PULLUP | GPIO_FUNC_SPI | GPIO_PIN16)
+#define SPI_MISO_PIN20 (GPIO_INPUT | GPIO_PULLUP | GPIO_FUNC_SPI | GPIO_PIN20)
+```
+
+And we select the desired combination for each pin...
+
+```c
+//  Select GPIO0 as MISO
+#define BOARD_SPI_MISO SPI_MISO_PIN0
+```
+
+To check whether the Pin Numbers are unique, we would still need GPIO Expander to do this at runtime.
+
+_But shouldn't the pins be defined in Kconfig / menuconfig?_
+
+Perhaps. NuttX on ESP32 uses Kconfig / menuconfig to define the pins. [(See this)](https://github.com/apache/incubator-nuttx/blob/master/arch/xtensa/src/esp32/Kconfig#L938-L984)
+
+Then we would need GPIO Expander to validate the Pin Functions at runtime.
 
 # Configure GPIO
 
