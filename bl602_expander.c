@@ -839,7 +839,7 @@ static FAR void *bl602_expander_attach(FAR struct ioexpander_dev_s *dev,
   FAR struct bl602_expander_callback_s *cb = NULL;
   int ret = 0;
 
-  gpioinfo("pinset=%lx, callback=%p, arg=%p\n", pinset, callback, arg);
+  gpioinfo("pinset=0x%lx, callback=%p, arg=%p\n", pinset, callback, arg);
   DEBUGASSERT(priv != NULL);
 
   /* Get exclusive access to the I/O Expander */
