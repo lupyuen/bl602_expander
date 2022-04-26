@@ -839,7 +839,7 @@ static FAR void *bl602_expander_attach(FAR struct ioexpander_dev_s *dev,
   FAR struct bl602_expander_callback_s *cb = NULL;
   int ret = 0;
 
-  gpioinfo("pinset=%x, callback=%p, arg=%p\n", pinset, callback, arg);
+  gpioinfo("pinset=%lx, callback=%p, arg=%p\n", pinset, callback, arg);
   DEBUGASSERT(priv != NULL);
 
   /* Get exclusive access to the I/O Expander */
@@ -865,7 +865,7 @@ static FAR void *bl602_expander_attach(FAR struct ioexpander_dev_s *dev,
             {
               /* Disable GPIO Interrupt and clear Interrupt Callback */
 
-              gpioinfo("Detach callback for gpio=%d, callback=%p, arg=%p\n",
+              gpioinfo("Detach callback for gpio=%lu, callback=%p, arg=%p\n",
                       cb->pinset, cb->cbfunc, cb->cbarg);
               bl602_expander_intmask(gpio_pin, 1);
               cb->pinset = 0;
@@ -932,7 +932,7 @@ static int bl602_expander_detach(FAR struct ioexpander_dev_s *dev, FAR void *han
               (uintptr_t)cb <=
               (uintptr_t)&priv->cb[CONFIG_IOEXPANDER_NPINS - 1]);
   UNUSED(priv);
-  gpioinfo("Detach callback for gpio=%d, callback=%p, arg=%p\n",
+  gpioinfo("Detach callback for gpio=%lu, callback=%p, arg=%p\n",
            cb->pinset, cb->cbfunc, cb->cbarg);
 
   /* Disable the GPIO Interrupt */
