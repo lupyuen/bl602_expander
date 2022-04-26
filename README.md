@@ -53,7 +53,7 @@ Robert Lipe has an excellent article that explains the current limitations of th
 
 -   Logging for SX1262 Library is now disabled by default and can be configured by Kconfig / menuconfig.
 
-    In menuconfig: Library Routines → Semtech SX1262 Library → Logging -> Debugging
+    In menuconfig: Library Routines → Semtech SX1262 Library → Logging → Debugging
 
 -   Logging for SPI Test Driver has been moved from "Enable Informational Debug Output" to "SPI Informational Output"
 
@@ -424,6 +424,38 @@ static int button_isr_handler(FAR struct ioexpander_dev_s *dev, ioe_pinset_t pin
 [(Source)](https://github.com/lupyuen/incubator-nuttx/blob/2982b3a99057c5935ca9150b9f0f1da3565c6061/boards/risc-v/bl602/bl602evb/src/bl602_bringup.c#L1038-L1044)
 
 Note that the Button Interrupt Handler runs in the context of the Interrupt Handler. Be careful!
+
+Another way to test the Push Button Interrupt is to use the GPIO Command...
+
+```text
+nsh> gpio -t 8 -w 1 /dev/gpio12
+Driver: /dev/gpio12
+gplh_enable: pin12: Disabling callback=0 handle=0
+gplh_enable: WARNING: pin12: Already detached
+bl602_expander_option: pin=12, option=2, value=0x6
+bl602_expander_option: Rising edge: pin=12
+bl602_expander_set_intmod: gpio_pin=12, int_ctlmod=1, int_trgmod=1
+gplh_read: pin12: value=0x42021aef
+bl602_expander_readpin: pin=12, value=1
+  Interrupt pin: Value=1
+gplh_attach: pin12: callback=0x23060808
+gplh_enable: pin12: Enabling callback=0x23060808 handle=0
+gplh_enable: pin12: Attaching 0x23060808
+bl602_expander_attach: pinset=1000, callback=0x2305f4e2, arg=0x42020d40
+bl602_expander_attach: Attach callback for gpio=12, callback=0x2305f4e2, arg=0x42020d40
+bl602_expander_interrupt: Interrupt! context=0x42012db8, priv=0x4201d0f0
+bl602_expander_interrupt: Call gpio=12, callback=0x2305f4e2, arg=0x42020d40
+gplh_handler: pin12: pinset: c callback=0x23060808
+gplh_enable: pin12: Disabling callback=0x23060808 handle=0x4201d1a0
+gplh_enable: pin12: Detaching handle=0x4201d1a0
+bl602_expander_detach: Detach callback for gpio=12, callback=0x2305f4e2, arg=0x42020d40
+gplh_attach: pin12: callback=0
+gplh_read: pin12: value=0x42021aef
+bl602_expander_readpin: pin=12, value=1
+  Verify:        Value=1
+```
+
+But this works only if we don't call `IOEP_ATTACH` to attach the Interrupt Handler.
 
 ## Touch Panel Interrupt
 
