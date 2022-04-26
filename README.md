@@ -641,6 +641,72 @@ For example: SPI MISO must be either GPIO 0, 4, 8, 12, 16 or 20.
 
 Any other GPIO Pin for SPI MISO will be disallowed by our BL602 GPIO Expander. (And fail at startup)
 
+_But the BL602 Pinset only tells us the Function Group (like SPI), not the specific Pin Function (like MISO)?_
+
+Yeah we might have to make the Pin Functions position-dependent. So SPI Pins will always be listed in this sequence: CS, MOSI, MISO, then CLK.
+
+Here's how it might look...
+
+```c
+/* Other Pins for BL602 GPIO Expander (For Validation Only) */
+
+static const gpio_pinset_t bl602_other_pins[] =
+{
+#ifdef BOARD_UART_0_RX_PIN
+  RX_TX
+  (
+    BOARD_UART_0_RX_PIN,
+    BOARD_UART_0_TX_PIN
+  ),
+#endif  /* BOARD_UART_0_RX_PIN */
+
+#ifdef BOARD_UART_1_RX_PIN
+  RX_TX
+  (
+    BOARD_UART_1_RX_PIN,
+    BOARD_UART_1_TX_PIN
+  ),
+#endif  /* BOARD_UART_1_RX_PIN */
+
+#ifdef BOARD_PWM_CH0_PIN
+  CH(
+    BOARD_PWM_CH0_PIN
+  ),
+#endif  /* BOARD_PWM_CH0_PIN */
+...
+#ifdef BOARD_I2C_SCL
+  SCL_SDA
+  (
+    BOARD_I2C_SCL, 
+    BOARD_I2C_SDA 
+  ),
+#endif  /* BOARD_I2C_SCL */
+
+#ifdef BOARD_SPI_CS
+  CS_MOSI_MISO_CLK
+  (
+    BOARD_SPI_CS, 
+    BOARD_SPI_MOSI, 
+    BOARD_SPI_MISO, 
+    BOARD_SPI_CLK
+  ),
+#endif  /* BOARD_SPI_CS */
+};
+```
+
+(Which looks neater with the clustering by Function Group)
+
+The macros are simple passthroughs...
+
+```c
+#define CH(ch)            ch
+#define RX_TX(rx, tx)     rx,  tx
+#define SCL_SDA(scl, sda) scl, sda
+#define CS_MOSI_MISO_CLK(cs, mosi, miso, clk) cs, mosi, miso, clk
+```
+
+Will devs accept this? Lemme know what you think!
+
 # Configure GPIO
 
 At startup our BL602 GPIO Expander configures the GPIO Input / Output / Interrupt Pins by calling [`bl602_configgpio`](https://github.com/lupyuen/incubator-nuttx/blob/pinedio/arch/risc-v/src/bl602/bl602_gpio.c#L58-L140) and `gpio_lower_half` (which registers "/dev/gpioN")...
