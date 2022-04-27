@@ -770,6 +770,10 @@ Perhaps. NuttX on ESP32 uses Kconfig / menuconfig to define the pins. [(See this
 
 Then we would need GPIO Expander to validate the Pin Functions at runtime.
 
+[__@Ralim__](https://mastodon.social/@Ralim/108201458447291513) has an interesting suggestion...
+
+> If each pin can only be used once, could we flip the arrignment matrix and instead have it always have an entry for each pin, which is either a selected value or hi-z by default; then use kconfig rules to prevent collisions ?
+
 # Configure GPIO
 
 At startup our BL602 GPIO Expander configures the GPIO Input / Output / Interrupt Pins by calling [`bl602_configgpio`](https://github.com/lupyuen/incubator-nuttx/blob/pinedio/arch/risc-v/src/bl602/bl602_gpio.c#L58-L140) and `gpio_lower_half` (which registers "/dev/gpioN")...
