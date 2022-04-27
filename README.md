@@ -4,9 +4,9 @@
 
 [(Tested on PineDio Stack BL604)](https://lupyuen.github.io/articles/pinedio2)
 
-[__Follow the updates on Twitter__](https://twitter.com/MisterTechBlog/status/1518352162966802432)
+Read the article...
 
-See https://lupyuen.github.io/articles/pinedio2#gpio-expander
+-   ["NuttX GPIO Expander for PineDio Stack BL604"](https://lupyuen.github.io/articles/expander)
 
 PineDio Stack BL604 has an interesting problem on Apache NuttX RTOS... Too many GPIOs! Let's make it work.
 
@@ -1240,8 +1240,6 @@ static int bl602_expander_detach(FAR struct ioexpander_dev_s *dev, FAR void *han
 
 [(`bl602_expander_intmask` is defined here)](https://github.com/lupyuen/bl602_expander/blob/main/bl602_expander.c#L164-L197)
 
-TODO
-
 # Handle GPIO Interrupt
 
 Here's how our BL602 GPIO Expander handles a GPIO Interrupt...
@@ -1314,8 +1312,6 @@ static int bl602_expander_interrupt(int irq, void *context, void *arg)
 [(`bl602_expander_intclear` is defined here)](https://github.com/lupyuen/bl602_expander/blob/main/bl602_expander.c#L275-L300)
 
 [(`bl602_expander_get_intstatus` is defined here)](https://github.com/lupyuen/bl602_expander/blob/main/bl602_expander.c#L247-L274)
-
-TODO
 
 # Test Touch Panel
 
