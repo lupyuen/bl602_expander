@@ -950,7 +950,7 @@ FAR struct ioexpander_dev_s *bl602_expander_initialize(
 
 # Set GPIO Options
 
-This is how we set the GPIO Options...
+Our GPIO Expander will configure the GPIO Interrupts: Rising Edge Trigger vs Falling Edge Trigger...
 
 ```c
 //  Set GPIO Options
@@ -1036,7 +1036,7 @@ static int bl602_expander_option(FAR struct ioexpander_dev_s *dev, uint8_t pin,
 
 # Read GPIO
 
-This is how our BL602 GPIO Expander reads GPIO Inputs...
+Our GPIO Expander calls the BL602 GPIO Driver to read GPIO Inputs...
 
 ```c
 //  Read the GPIO Input Pin
@@ -1076,7 +1076,7 @@ static int bl602_expander_readpin(FAR struct ioexpander_dev_s *dev,
 
 # Write GPIO
 
-This is how our BL602 GPIO Expander writes to GPIO Output Pins...
+Our GPIO Expander calls the BL602 GPIO Driver to write GPIO Outputs ... Wonder what happens if we flip between Input and Output ... Like for PineDio Stack's Push Button / Vibrator 🤔
 
 ```c
 //  Write to the GPIO Output Pin
