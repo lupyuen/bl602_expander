@@ -408,7 +408,7 @@ void *handle = IOEP_ATTACH(
   NULL                           //  TODO: Set the callback argument
 );
 DEBUGASSERT(handle != NULL);
-```c
+```
 
 [(Source)](https://github.com/lupyuen/incubator-nuttx/blob/2982b3a99057c5935ca9150b9f0f1da3565c6061/boards/risc-v/bl602/bl602evb/src/bl602_bringup.c#L696-L704)
 
