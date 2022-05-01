@@ -1007,7 +1007,9 @@ FAR struct ioexpander_dev_s *bl602_expander_initialize(
   if (ret < 0)
     {
       gpioerr("ERROR: Failed to disable GPIO interrupts\n");
+#ifdef CONFIG_BL602_EXPANDER_MULTIPLE
       kmm_free(priv);
+#endif /* CONFIG_BL602_EXPANDER_MULTIPLE */
       return NULL;
     }
 
@@ -1026,7 +1028,9 @@ FAR struct ioexpander_dev_s *bl602_expander_initialize(
   if (ret < 0)
     {
       gpioerr("ERROR: Failed to enable GPIO interrupts\n");
+#ifdef CONFIG_BL602_EXPANDER_MULTIPLE
       kmm_free(priv);
+#endif /* CONFIG_BL602_EXPANDER_MULTIPLE */
       return NULL;
     }
 #endif
@@ -1046,7 +1050,9 @@ FAR struct ioexpander_dev_s *bl602_expander_initialize(
       if (gpio_is_used[gpio_pin])
         {
           gpioerr("ERROR: GPIO pin %d is already in use\n", gpio_pin);
+#ifdef CONFIG_BL602_EXPANDER_MULTIPLE
           kmm_free(priv);
+#endif /* CONFIG_BL602_EXPANDER_MULTIPLE */
           return NULL;
         }
       gpio_is_used[gpio_pin] = true;
@@ -1067,7 +1073,9 @@ FAR struct ioexpander_dev_s *bl602_expander_initialize(
       if (gpio_is_used[gpio_pin])
         {
           gpioerr("ERROR: GPIO pin %d is already in use\n", gpio_pin);
+#ifdef CONFIG_BL602_EXPANDER_MULTIPLE
           kmm_free(priv);
+#endif /* CONFIG_BL602_EXPANDER_MULTIPLE */
           return NULL;
         }
       gpio_is_used[gpio_pin] = true;
@@ -1088,7 +1096,9 @@ FAR struct ioexpander_dev_s *bl602_expander_initialize(
       if (gpio_is_used[gpio_pin])
         {
           gpioerr("ERROR: GPIO pin %d is already in use\n", gpio_pin);
+#ifdef CONFIG_BL602_EXPANDER_MULTIPLE
           kmm_free(priv);
+#endif /* CONFIG_BL602_EXPANDER_MULTIPLE */
           return NULL;
         }
       gpio_is_used[gpio_pin] = true;
@@ -1109,7 +1119,9 @@ FAR struct ioexpander_dev_s *bl602_expander_initialize(
       if (gpio_is_used[gpio_pin])
         {
           gpioerr("ERROR: GPIO pin %d is already in use\n", gpio_pin);
+#ifdef CONFIG_BL602_EXPANDER_MULTIPLE
           kmm_free(priv);
+#endif /* CONFIG_BL602_EXPANDER_MULTIPLE */
           return NULL;
         }
       gpio_is_used[gpio_pin] = true;
