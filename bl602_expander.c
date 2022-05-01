@@ -135,7 +135,7 @@ static int bl602_expander_detach(FAR struct ioexpander_dev_s *dev,
  * as well be pre-allocated.
  */
 
-static struct bl602_expander_dev_s g_skel;
+static struct bl602_expander_dev_s g_bl602_expander_dev;
 #endif
 
 /* I/O Expander Operations */
@@ -992,7 +992,7 @@ FAR struct ioexpander_dev_s *bl602_expander_initialize(
 #else
   /* Use the one-and-only I/O Expander driver instance */
 
-  priv = &g_skel;
+  priv = &g_bl602_expander_dev;
 #endif
 
   /* Initialize the device state structure */
